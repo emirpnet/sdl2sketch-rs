@@ -1,0 +1,16 @@
+[package]
+name = "sdl2sketch"
+version = "0.1.0"
+authors = ["Jochen Peters <dev@emirp.net>"]
+
+[dependencies]
+rand = "0.3.14"
+
+[dependencies.sdl2]
+version = "0.31.0"
+default-features = false
+features = ["gfx"]
+
+[dependencies.mylib]
+path = "../mylib"
+
