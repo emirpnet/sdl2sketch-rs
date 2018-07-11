@@ -33,7 +33,7 @@ fn main() {
 		}
 
 		pt = next_pt(pt);
-		display_pt(&mut canvas, pt.x, pt.y);
+		display_pt(&mut canvas, &pt);
 
 		thread::sleep(time::Duration::from_millis(1));
 	}
@@ -74,9 +74,9 @@ fn next_pt(pt: Point) -> Point {
 	Point {x, y}
 }
 
-fn display_pt(canvas: &mut Canvas<sdl2::video::Window>, x: f32, y: f32) {
-	let px = map_float(x, -2.1820, 2.6558, 0.0, WIDTH as f32) as i32;
-	let py = map_float(y, 0.0, 9.9983, HEIGHT as f32, 0.0) as i32;
+fn display_pt(canvas: &mut Canvas<sdl2::video::Window>, pt: &Point) {
+	let px = map_float(pt.x, -2.1820, 2.6558, 0.0, WIDTH as f32) as i32;
+	let py = map_float(pt.y, 0.0, 9.9983, HEIGHT as f32, 0.0) as i32;
 	canvas.set_draw_color(Color::RGB(255, 255, 255));
 	let _ = canvas.draw_point(sdl2::rect::Point::new(px, py));
 	canvas.present();
