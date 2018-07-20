@@ -1,28 +1,34 @@
+//#![feature(trace_macros)]
+//trace_macros!(true);
+
 #[macro_use]
 extern crate sdl2sketch;
 use sdl2sketch::Sketch;
 
 
-struct SketchGlobals {
+struct Globals {
 	xpos: i32,
 	ypos: i32,
 }
 
-fn setup(s: &mut Sketch<SketchGlobals>, _g: &mut SketchGlobals) {
-	s.set_background(33, 33, 33);
+fn setup(_s: &mut Sketch, _global: &mut Globals) {
+	
 }
 
-fn update(s: &mut Sketch<SketchGlobals>, g: &mut SketchGlobals) {
-	s.set_color(0, 0, 255);
-	s.draw_rect(g.xpos, g.ypos, 20, 20);
-	g.xpos += 1;
-	g.ypos += 1;
+fn update(_s: &mut Sketch, global: &mut Globals) {
+	global.xpos += 1;
+	global.ypos += 1;
+}
 
+fn draw(s: &mut Sketch, global: &mut Globals) {
+	s.background(33, 33, 33);
+	s.set_color(0, 0, 255);
+	s.draw_rect(global.xpos, global.ypos, 20, 20);
 }
 
 fn main() {
-	let mut s: Sketch<SketchGlobals> = Sketch::new(640, 480, "Title", &setup, &update);
-	let mut g = SketchGlobals { xpos: 50, ypos: 50 };
-	s.run(&mut g);
+	let mut s = Sketch::new(640, 480, "Title");
+	let mut g = Globals { xpos: 50, ypos: 50 };
+	sdl2sketch_run!(s, g);
 }
 

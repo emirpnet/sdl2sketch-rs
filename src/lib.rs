@@ -7,55 +7,56 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
 
-/*
 #[macro_export]
-macro_rules! sdl2sketch_setup {
-	($x:block) => { fn setup(s: &mut Sketch<SketchGlobals>, _g: &mut SketchGlobals) { $x } }
+macro_rules! sdl2sketch_run {
+
+	($sketch:expr, $globals:expr) => {
+		$sketch.running = true;
+		setup(&mut $sketch, &mut $globals);
+		while $sketch.running {
+			$sketch.handle_keyevents();
+			update(&mut $sketch, &mut $globals);
+			draw(&mut $sketch, &mut $globals);
+			$sketch.show();
+		}
+	};
+
+	($sketch:expr) => {
+		$sketch.running = true;
+		setup(&mut $sketch);
+		while $sketch.running {
+			$sketch.handle_keyevents();
+			update(&mut $sketch);
+			draw(&mut $sketch);
+			$sketch.show();
+		}
+	};
 }
-*/
 
 
-pub struct Sketch<'a, T: 'a> {
+pub struct Sketch {
 	pub width: u32,
 	pub height: u32,
-	setup: &'a Fn(&mut Sketch<T>, &mut T),
-	update: &'a Fn(&mut Sketch<T>, &mut T),
-	running: bool,
+	pub running: bool,
 	canvas: Canvas<sdl2::video::Window>,
 	event_pump: EventPump,
 	framerate: u32, //TODO
-	bgcolor: Color,
 }
 
 
-impl<'a, T> Sketch<'a, T> {
+impl Sketch {
 	
-	pub fn new(width: u32, height: u32, title: &str, setup: &'a Fn(&mut Sketch<T>, &mut T), update: &'a Fn(&mut Sketch<T>, &mut T)) -> Self {
+	pub fn new(width: u32, height: u32, title: &str) -> Self {
 		let (canvas, event_pump) = new_canvas(width, height, title);
 		let framerate = 60;
 
 		Sketch {
-			setup,
-			update,
 			running: false,
 			canvas,
 			event_pump,
 			width,
 			height,
 			framerate,
-			bgcolor: Color::RGB(0, 0, 0),
-		}
-	}
-
-	pub fn run(&mut self, state: &mut T) {
-		self.running = true;
-		(self.setup)(self, state);
-		while self.running {
-			self.canvas.set_draw_color(self.bgcolor);
-			self.canvas.clear();
-			(self.update)(self, state);
-			self.canvas.present();
-			self.handle_keyevents();
 		}
 	}
 
@@ -63,7 +64,7 @@ impl<'a, T> Sketch<'a, T> {
 		self.running = false;
 	}
 
-	fn handle_keyevents(&mut self) {
+	pub fn handle_keyevents(&mut self) {
 		for event in self.event_pump.poll_iter() {
 			match event {
 				Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { self.running = false; },
@@ -77,8 +78,13 @@ impl<'a, T> Sketch<'a, T> {
 		self.canvas.set_draw_color(Color::RGB(r, g, b));
 	}
 
-	pub fn set_background(&mut self, r: u8, g: u8, b: u8) {
-		self.bgcolor = Color::RGB(r, g, b);
+	pub fn background(&mut self, r: u8, g: u8, b: u8) {
+		self.canvas.set_draw_color(Color::RGB(r, g, b));
+		self.canvas.clear();
+	}
+
+	pub fn show(&mut self) {
+		self.canvas.present();
 	}
 
 	pub fn draw_point(&mut self, x: i32, y: i32) {
