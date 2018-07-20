@@ -1,12 +1,8 @@
-//#![feature(trace_macros)]
-//trace_macros!(true);
-
 #[macro_use] extern crate sdl2sketch;
 extern crate rand;
 extern crate mylib;
 
 use sdl2sketch::Sketch;
-use std::{thread,time};
 use mylib::useful::map_float;
 
 
@@ -15,30 +11,26 @@ struct Point {
 	y: f32
 }
 
-fn setup(s: &mut Sketch, _pt: &mut Point) {
-	s.background(33, 33, 33);
-}
-
-fn update(_s: &mut Sketch, pt: &mut Point) {
-	next_pt(pt);
-}
-
-fn draw(s: &mut Sketch, pt: &mut Point) {
-	let px = map_float(pt.x, -2.1820, 2.6558, 0.0, s.width as f32) as i32;
-	let py = map_float(pt.y, 0.0, 9.9983, s.height as f32, 0.0) as i32;
-	s.set_color(0, 0, 255);
-	s.draw_point(px, py);
-
-	//thread::sleep(time::Duration::from_millis(1));
-}
-
-
 fn main() {
 	let mut s = Sketch::new(480, 640, "Barnsley fern");
 	let mut pt = Point { x: 0.0, y: 0.0 };
 	sdl2sketch_run!(&mut s, &mut pt);
 }
 
+fn setup(s: &mut Sketch, _pt: &mut Point) {
+	s.set_framerate(120);
+	s.background(33, 33, 33);
+	s.set_color(0, 220, 0);
+}
+
+fn draw(s: &mut Sketch, pt: &mut Point) {
+	for _i in 0..20 {
+		next_pt(pt);
+		let px = map_float(pt.x, -2.1820, 2.6558, 0.0, s.width as f32) as i32;
+		let py = map_float(pt.y, 0.0, 9.9983, s.height as f32, 0.0) as i32;
+		s.draw_point(px, py);
+	}
+}
 
 fn next_pt(pt: &mut Point) {
 	
@@ -75,12 +67,3 @@ fn next_pt(pt: &mut Point) {
 	pt.y = y;
 }
 
-/*
-fn display_pt(canvas: &mut Canvas<sdl2::video::Window>, pt: &Point) {
-	let px = map_float(pt.x, -2.1820, 2.6558, 0.0, WIDTH as f32) as i32;
-	let py = map_float(pt.y, 0.0, 9.9983, HEIGHT as f32, 0.0) as i32;
-	canvas.set_draw_color(Color::RGB(255, 255, 255));
-	let _ = canvas.draw_point(sdl2::rect::Point::new(px, py));
-	canvas.present();
-}
-*/

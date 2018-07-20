@@ -2,6 +2,7 @@ extern crate sdl2;
 
 use sdl2::render::Canvas;
 use sdl2::EventPump;
+use sdl2::gfx::framerate::FPSManager;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -14,9 +15,9 @@ macro_rules! sdl2sketch_run {
 		setup($sketch, $globals);
 		while $sketch.running {
 			$sketch.handle_keyevents(); // TODO
-			update($sketch, $globals);
 			draw($sketch, $globals);
 			$sketch.present();
+			$sketch.delay();
 		}
 	};
 	($sketch:expr) => {
@@ -24,9 +25,9 @@ macro_rules! sdl2sketch_run {
 		setup($sketch);
 		while $sketch.running {
 			$sketch.handle_keyevents(); // TODO
-			update($sketch);
 			draw($sketch);
 			$sketch.present();
+			$sketch.delay();
 		}
 	};
 }
@@ -36,9 +37,9 @@ pub struct Sketch {
 	pub width: u32,
 	pub height: u32,
 	pub running: bool,
-	framerate: u32, // TODO
 	canvas: Canvas<sdl2::video::Window>,
 	event_pump: EventPump,
+	fps_manager: FPSManager,
 }
 
 
@@ -46,15 +47,14 @@ impl Sketch {
 	
 	pub fn new(width: u32, height: u32, title: &str) -> Self {
 		let (canvas, event_pump) = new_canvas(width, height, title);
-		let framerate = 60;
 
 		Sketch {
 			width,
 			height,
 			running: false,
-			framerate,
 			canvas,
 			event_pump,
+			fps_manager: FPSManager::new(),
 		}
 	}
 
@@ -70,6 +70,14 @@ impl Sketch {
 				_ => {}
 			}
 		}
+	}
+
+	pub fn set_framerate(&mut self, fps: u32) {
+		self.fps_manager.set_framerate(fps).unwrap();
+	}
+
+	pub fn delay(&mut self) {
+		self.fps_manager.delay();
 	}
 
 	pub fn set_color(&mut self, r: u8, g: u8, b: u8) {
