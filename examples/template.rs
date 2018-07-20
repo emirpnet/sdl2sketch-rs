@@ -1,8 +1,7 @@
 //#![feature(trace_macros)]
 //trace_macros!(true);
 
-#[macro_use]
-extern crate sdl2sketch;
+#[macro_use] extern crate sdl2sketch;
 use sdl2sketch::Sketch;
 
 
@@ -29,6 +28,6 @@ fn draw(s: &mut Sketch, global: &mut Globals) {
 fn main() {
 	let mut s = Sketch::new(640, 480, "Title");
 	let mut g = Globals { xpos: 50, ypos: 50 };
-	sdl2sketch_run!(s, g);
+	sdl2sketch_run!(&mut s, &mut g);
 }
 

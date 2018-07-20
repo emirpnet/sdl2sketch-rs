@@ -9,26 +9,24 @@ use sdl2::keyboard::Keycode;
 
 #[macro_export]
 macro_rules! sdl2sketch_run {
-
 	($sketch:expr, $globals:expr) => {
 		$sketch.running = true;
-		setup(&mut $sketch, &mut $globals);
+		setup($sketch, $globals);
 		while $sketch.running {
-			$sketch.handle_keyevents();
-			update(&mut $sketch, &mut $globals);
-			draw(&mut $sketch, &mut $globals);
-			$sketch.show();
+			$sketch.handle_keyevents(); // TODO
+			update($sketch, $globals);
+			draw($sketch, $globals);
+			$sketch.present();
 		}
 	};
-
 	($sketch:expr) => {
 		$sketch.running = true;
-		setup(&mut $sketch);
+		setup($sketch);
 		while $sketch.running {
-			$sketch.handle_keyevents();
-			update(&mut $sketch);
-			draw(&mut $sketch);
-			$sketch.show();
+			$sketch.handle_keyevents(); // TODO
+			update($sketch);
+			draw($sketch);
+			$sketch.present();
 		}
 	};
 }
@@ -38,9 +36,9 @@ pub struct Sketch {
 	pub width: u32,
 	pub height: u32,
 	pub running: bool,
+	framerate: u32, // TODO
 	canvas: Canvas<sdl2::video::Window>,
 	event_pump: EventPump,
-	framerate: u32, //TODO
 }
 
 
@@ -51,12 +49,12 @@ impl Sketch {
 		let framerate = 60;
 
 		Sketch {
-			running: false,
-			canvas,
-			event_pump,
 			width,
 			height,
+			running: false,
 			framerate,
+			canvas,
+			event_pump,
 		}
 	}
 
@@ -83,7 +81,7 @@ impl Sketch {
 		self.canvas.clear();
 	}
 
-	pub fn show(&mut self) {
+	pub fn present(&mut self) {
 		self.canvas.present();
 	}
 
@@ -97,8 +95,7 @@ impl Sketch {
 }
 
 
-pub fn new_canvas(width: u32, height: u32, title: &str) -> (Canvas<sdl2::video::Window>, EventPump) {
-
+fn new_canvas(width: u32, height: u32, title: &str) -> (Canvas<sdl2::video::Window>, EventPump) {
 	let sdl_context = sdl2::init().unwrap();
 	let video_subsystem = sdl_context.video().unwrap();
 	let window = video_subsystem.window(title, width, height)

@@ -1,46 +1,46 @@
+//#![feature(trace_macros)]
+//trace_macros!(true);
+
+#[macro_use] extern crate sdl2sketch;
 extern crate rand;
-extern crate sdl2;
-extern crate sdl2sketch;
 extern crate mylib;
 
+use sdl2sketch::Sketch;
 use std::{thread,time};
-use sdl2::render::Canvas;
-use sdl2::pixels::Color;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 use mylib::useful::map_float;
 
-
-const WIDTH: u32 = 480;
-const HEIGHT: u32 = 640;
 
 struct Point {
 	x: f32,
 	y: f32
 }
 
-fn main() {
-	let (mut canvas, mut event_pump) = sdl2sketch::new_canvas(WIDTH, HEIGHT, "Barnsley fern");
-	let mut pt = Point { x: 0.0, y: 0.0 };
+fn setup(s: &mut Sketch, _pt: &mut Point) {
+	s.background(33, 33, 33);
+}
 
-	'running: loop {
+fn update(_s: &mut Sketch, pt: &mut Point) {
+	next_pt(pt);
+}
 
-		for event in event_pump.poll_iter() {
-			match event {
-				Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { break 'running; },
-				_ => {}
-			}
-		}
+fn draw(s: &mut Sketch, pt: &mut Point) {
+	let px = map_float(pt.x, -2.1820, 2.6558, 0.0, s.width as f32) as i32;
+	let py = map_float(pt.y, 0.0, 9.9983, s.height as f32, 0.0) as i32;
+	s.set_color(0, 0, 255);
+	s.draw_point(px, py);
 
-		pt = next_pt(pt);
-		display_pt(&mut canvas, &pt);
-
-		thread::sleep(time::Duration::from_millis(1));
-	}
+	//thread::sleep(time::Duration::from_millis(1));
 }
 
 
-fn next_pt(pt: Point) -> Point {
+fn main() {
+	let mut s = Sketch::new(480, 640, "Barnsley fern");
+	let mut pt = Point { x: 0.0, y: 0.0 };
+	sdl2sketch_run!(&mut s, &mut pt);
+}
+
+
+fn next_pt(pt: &mut Point) {
 	
 	let trans = [ // Barnsley fern
 		[ 0.00, 0.00, 0.00, 0.16, 0.00, 0.00, 0.01],
@@ -71,9 +71,11 @@ fn next_pt(pt: Point) -> Point {
 	let x = t[0] * pt.x + t[1] * pt.y + t[4];
 	let y = t[2] * pt.x + t[3] * pt.y + t[5];
 
-	Point {x, y}
+	pt.x = x;
+	pt.y = y;
 }
 
+/*
 fn display_pt(canvas: &mut Canvas<sdl2::video::Window>, pt: &Point) {
 	let px = map_float(pt.x, -2.1820, 2.6558, 0.0, WIDTH as f32) as i32;
 	let py = map_float(pt.y, 0.0, 9.9983, HEIGHT as f32, 0.0) as i32;
@@ -81,4 +83,4 @@ fn display_pt(canvas: &mut Canvas<sdl2::video::Window>, pt: &Point) {
 	let _ = canvas.draw_point(sdl2::rect::Point::new(px, py));
 	canvas.present();
 }
-
+*/
