@@ -5,6 +5,7 @@ use sdl2::EventPump;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::gfx::framerate::FPSManager;
+use sdl2::gfx::primitives::DrawRenderer;
 
 pub mod utils;
 pub type Color = sdl2::pixels::Color;
@@ -39,6 +40,9 @@ pub struct Sketch {
 	pub width: u32,
 	pub height: u32,
 	pub running: bool,
+	fill_color: Color,
+	stroke_color: Color,
+	stroke_weight: u32,
 	canvas: Canvas<sdl2::video::Window>,
 	event_pump: EventPump,
 	fps_manager: FPSManager,
@@ -54,6 +58,9 @@ impl Sketch {
 			width,
 			height,
 			running: false,
+			fill_color: Color::RGB(255, 255, 255),
+			stroke_color: Color::RGB(255, 255, 255),
+			stroke_weight: 1,
 			canvas,
 			event_pump,
 			fps_manager: FPSManager::new(),
@@ -83,12 +90,14 @@ impl Sketch {
 	}
 
 	pub fn set_color(&mut self, c: &Color) {
-		self.canvas.set_draw_color(*c);
+		self.fill_color = c.clone();
+		self.canvas.set_draw_color(self.fill_color);
 	}
 
 	pub fn background(&mut self, c: &Color) {
 		self.canvas.set_draw_color(*c);
 		self.canvas.clear();
+		self.canvas.set_draw_color(self.fill_color);
 	}
 
 	pub fn present(&mut self) {
@@ -102,6 +111,11 @@ impl Sketch {
 	pub fn draw_rect(&mut self, x: i32, y: i32, w: u32, h: u32) {
 		self.canvas.fill_rect(sdl2::rect::Rect::new(x, y, w, h)).unwrap();
 	}
+
+	pub fn draw_circle(&mut self, x: i32, y: i32, r: i32) {
+		self.canvas.filled_circle(x as i16, y as i16, r as i16, self.fill_color).unwrap();
+		self.canvas.aa_circle(x as i16, y as i16, r as i16, self.fill_color).unwrap();
+	}
 }
 
 
@@ -113,7 +127,6 @@ fn new_canvas(width: u32, height: u32, title: &str) -> (Canvas<sdl2::video::Wind
 		.opengl()
 		.build()
 		.unwrap();
-	//let mut renderer = window.renderer().build().unwrap();
 	let canvas = window.into_canvas().accelerated().build().unwrap();
 	let event_pump = sdl_context.event_pump().unwrap();
 
