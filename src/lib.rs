@@ -2,10 +2,12 @@ extern crate sdl2;
 
 use sdl2::render::Canvas;
 use sdl2::EventPump;
-use sdl2::gfx::framerate::FPSManager;
-use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::gfx::framerate::FPSManager;
+
+pub mod utils;
+pub type Color = sdl2::pixels::Color;
 
 
 #[macro_export]
@@ -80,12 +82,12 @@ impl Sketch {
 		self.fps_manager.delay();
 	}
 
-	pub fn set_color(&mut self, r: u8, g: u8, b: u8) {
-		self.canvas.set_draw_color(Color::RGB(r, g, b));
+	pub fn set_color(&mut self, c: &Color) {
+		self.canvas.set_draw_color(*c);
 	}
 
-	pub fn background(&mut self, r: u8, g: u8, b: u8) {
-		self.canvas.set_draw_color(Color::RGB(r, g, b));
+	pub fn background(&mut self, c: &Color) {
+		self.canvas.set_draw_color(*c);
 		self.canvas.clear();
 	}
 

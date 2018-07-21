@@ -1,9 +1,9 @@
 #[macro_use] extern crate sdl2sketch;
+extern crate mylib;
 extern crate rand;
 
-use sdl2sketch::Sketch;
+use sdl2sketch::*;
 use rand::Rng;
-use std::cmp::{min,max};
 
 
 const WIDTH: i32 = 649;
@@ -38,12 +38,10 @@ fn generate_random_start() -> Cells {
 
 fn setup(s: &mut Sketch, _universe: &mut Cells) {
 	s.set_framerate(30);
-	s.background(33, 33, 33);
 }
 
 fn draw(s: &mut Sketch, universe: &mut Cells) {
-	s.background(33, 33, 33);
-	s.set_color(220, 220, 220);
+	s.background(&Color::RGB(33, 33, 33));
 
 	let prev = universe.clone();
 
@@ -61,16 +59,18 @@ struct Cell {
 	row: i32,
 	col: i32,
 	pub alive: bool,
-	color: (u8,u8,u8), // TODO
+	pub color: Color,
 }
 
 impl Cell {
 	pub fn new(row: i32, col: i32, alive: bool) -> Self {
+		let rgb = utils::hsv_to_rgb(rand::thread_rng().gen_range(0, 360), 1.0, 1.0);
+		let color = Color::RGB(rgb.0, rgb.1, rgb.2);
 		Cell {
 			row,
 			col,
 			alive,
-			color: (255,255,255), // TODO
+			color,
 		}
 	}
 
@@ -78,12 +78,13 @@ impl Cell {
 		if self.alive {
 			let x = self.col * BS;
 			let y = self.row * BS;
+			sketch.set_color(&self.color);
 			sketch.draw_rect(x, y, BS as u32, BS as u32);
 		}
 	}
 
 	pub fn update(&mut self, universe: &Cells) {
-		self.alive = match (self.alive, Cell::count_neighbours(self.row, self.col, universe)) {
+		self.alive = match (self.alive, self.count_neighbours(universe)) {
 			(true, 2...3) => true,
 			(true, _) => false,
 			(false, 3) => true,
@@ -91,17 +92,49 @@ impl Cell {
 		}
 	}
 
-	fn count_neighbours(row: i32, col: i32, universe: &Cells) -> i32 {
+	fn count_neighbours(&self, universe: &Cells) -> i32 {
+		let neighbours = self.get_neighbour_indices(true);
 		let mut count = 0;
-		if universe[index(max(row-1, 0), col)].alive { count += 1; }
-		if universe[index(min(row+1, NROWS-1), col)].alive { count += 1; }
-		if universe[index(row, max(col-1, 0))].alive { count += 1; }
-		if universe[index(row, min(col+1, NCOLS-1))].alive { count += 1; }
-		if universe[index(max(row-1, 0), max(col-1, 0))].alive { count += 1; }
-		if universe[index(max(row-1, 0), min(col+1, NCOLS-1))].alive { count += 1; }
-		if universe[index(min(row+1, NROWS-1), max(col-1, 0))].alive { count += 1; }
-		if universe[index(min(row+1, NROWS-1), min(col+1, NCOLS-1))].alive { count += 1; }
+		for i in neighbours {
+			if universe[i].alive { count += 1; }
+		}
 		count
+	}
+
+	fn get_neighbour_indices(&self, wrap: bool) -> Vec<usize> {
+
+		let mut coords = Vec::with_capacity(8);
+		coords.push((self.row-1, self.col  ));
+		coords.push((self.row+1, self.col  ));
+		coords.push((self.row,   self.col-1));
+		coords.push((self.row,   self.col+1));
+		coords.push((self.row-1, self.col-1));
+		coords.push((self.row-1, self.col+1));
+		coords.push((self.row+1, self.col-1));
+		coords.push((self.row+1, self.col+1));
+
+		if !wrap {
+			coords.retain(|c| c.0 >= 0 && c.0 < NROWS && c.1 >= 0 && c.1 < NCOLS);
+		} else {
+			for c in &mut coords {
+				if c.0 < 0 {
+					c.0 += NROWS;
+				} else {
+					c.0 = c.0 % NROWS;
+				}
+				if c.1 < 0 {
+					c.1 += NCOLS;
+				} else {
+					c.1 = c.1 % NCOLS;
+				}
+			}
+		}
+
+		let mut indices = Vec::with_capacity(8);
+		for c in coords {
+			indices.push(index(c.0, c.1));
+		}
+		indices
 	}
 }
 

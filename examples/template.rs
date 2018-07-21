@@ -1,7 +1,8 @@
 //#![feature(trace_macros)]
 //trace_macros!(true);
 #[macro_use] extern crate sdl2sketch;
-use sdl2sketch::Sketch;
+
+use sdl2sketch::*;
 
 
 struct Globals {
@@ -24,8 +25,8 @@ fn draw(s: &mut Sketch, global: &mut Globals) {
 	global.xpos += 2;
 	global.ypos += 1;
 	//draw
-	s.background(33, 33, 33);
-	s.set_color(0, 0, 255);
+	s.background(&Color::RGB(33, 33, 33));
+	s.set_color(&Color::RGB(0, 0, 255));
 	s.draw_rect(global.xpos, global.ypos, 20, 20);
 }
 

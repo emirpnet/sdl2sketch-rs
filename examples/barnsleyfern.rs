@@ -2,8 +2,8 @@
 extern crate rand;
 extern crate mylib;
 
-use sdl2sketch::Sketch;
-use mylib::useful::map_float;
+use sdl2sketch::*;
+use mylib::useful::map;
 
 
 struct Point {
@@ -19,15 +19,15 @@ fn main() {
 
 fn setup(s: &mut Sketch, _pt: &mut Point) {
 	s.set_framerate(120);
-	s.background(33, 33, 33);
-	s.set_color(0, 220, 0);
+	s.background(&Color::RGB(33, 33, 33));
+	s.set_color(&Color::RGB(0, 220, 0));
 }
 
 fn draw(s: &mut Sketch, pt: &mut Point) {
 	for _i in 0..20 {
 		next_pt(pt);
-		let px = map_float(pt.x, -2.1820, 2.6558, 0.0, s.width as f32) as i32;
-		let py = map_float(pt.y, 0.0, 9.9983, s.height as f32, 0.0) as i32;
+		let px = map(pt.x, -2.1820, 2.6558, 0.0, s.width as f32) as i32;
+		let py = map(pt.y, 0.0, 9.9983, s.height as f32, 0.0) as i32;
 		s.draw_point(px, py);
 	}
 }
