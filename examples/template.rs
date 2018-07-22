@@ -5,30 +5,51 @@
 use sdl2sketch::*;
 
 
-struct Globals {
-	xpos: i32,
-	ypos: i32,
+const MOVER_SIZE: u32 = 25;
+
+struct GlobalState {
+	pos: (i32, i32),
+	vel: (i32, i32),
 }
 
 fn main() {
 	let mut s = Sketch::new(640, 480, "Title");
-	let mut g = Globals { xpos: 50, ypos: 50 };
+	let mut g = GlobalState {
+		pos: (50, 50),
+		vel: (2, 1),
+	};
 	sdl2sketch_run!(&mut s, &mut g);
 }
 
-fn setup(s: &mut Sketch, _global: &mut Globals) {
+fn setup(s: &mut Sketch, _global: &mut GlobalState) {
 	s.set_framerate(30);
+	//s.no_smooth();
 }
 
-fn draw(s: &mut Sketch, global: &mut Globals) {
+fn draw(s: &mut Sketch, g: &mut GlobalState) {
+
 	//update
-	global.xpos += 2;
-	global.ypos += 1;
+	g.pos.0 += g.vel.0;
+	g.pos.1 += g.vel.1;
+	if g.pos.0 <= 0 || g.pos.0 + MOVER_SIZE as i32 >= s.width() {
+		g.vel.0 *= -1;
+	}
+	if g.pos.1 <= 0 || g.pos.1 + MOVER_SIZE as i32 >= s.height() {
+		g.vel.1 *= -1;
+	}
+
 	//draw
-	s.background(&Color::RGB(33, 33, 33));
-	s.set_color(&Color::RGB(0, 255, 255));
-	s.draw_circle(320, 240, 80);
-	s.set_color(&Color::RGB(0, 0, 255));
-	s.draw_rect(global.xpos, global.ypos, 20, 20);
+	s.background(Color::RGB(33, 33, 33));
+
+	s.stroke(Color::RGB(255, 255, 255));
+	s.line(10, 10, 630, 470);
+
+	s.no_stroke();
+	s.fill(Color::RGB(255, 0, 0));
+	s.circle(320, 240, 80);
+
+	s.stroke(Color::RGB(0, 0, 255));
+	s.fill(Color::RGB(0, 255, 255));
+	s.rect(g.pos.0, g.pos.1, MOVER_SIZE, MOVER_SIZE);
 }
 

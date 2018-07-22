@@ -42,7 +42,7 @@ fn setup(s: &mut Sketch, _universe: &mut Cells) {
 }
 
 fn draw(s: &mut Sketch, universe: &mut Cells) {
-	s.background(&Color::RGB(33, 33, 33));
+	s.background(Color::RGB(33, 33, 33));
 
 	let prev = universe.clone();
 
@@ -79,8 +79,9 @@ impl Cell {
 		if self.alive {
 			let x = self.col * BS;
 			let y = self.row * BS;
-			sketch.set_color(&self.color);
-			sketch.draw_rect(x, y, BS as u32, BS as u32);
+			sketch.no_stroke();
+			sketch.fill(self.color);
+			sketch.rect(x, y, BS as u32, BS as u32);
 		}
 	}
 
