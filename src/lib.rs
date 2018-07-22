@@ -17,7 +17,7 @@ macro_rules! sdl2sketch_run {
 		$sketch.running = true;
 		setup($sketch, $globals);
 		while $sketch.running {
-			$sketch.handle_keyevents(); // TODO
+			$sketch.handle_events(); // TODO
 			draw($sketch, $globals);
 			$sketch.present();
 			$sketch.delay();
@@ -27,7 +27,7 @@ macro_rules! sdl2sketch_run {
 		$sketch.running = true;
 		setup($sketch);
 		while $sketch.running {
-			$sketch.handle_keyevents(); // TODO
+			$sketch.handle_events(); // TODO
 			draw($sketch);
 			$sketch.present();
 			$sketch.delay();
@@ -73,7 +73,7 @@ impl Sketch {
 		}
 	}
 
-	pub fn handle_keyevents(&mut self) {
+	pub fn handle_events(&mut self) {
 		for event in self.event_pump.poll_iter() {
 			match event {
 				Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { self.running = false; },
@@ -173,6 +173,7 @@ impl Sketch {
 		if let Some(c) = self.stroke_color {
 			self.canvas.set_draw_color(c);
 			self.canvas.draw_rect(sdl2::rect::Rect::new(x, y, w, h)).unwrap();
+			self.canvas.draw_point(sdl2::rect::Point::new(x-1+w as i32, y-1+h as i32)).unwrap(); // fix for missing point in bottom-right corner of draw_rect()
 		}
 	}
 
@@ -188,7 +189,7 @@ impl Sketch {
 		}
 	}
 
-	pub fn circle(&mut self, x: i32, y: i32, r: i32) {
+	pub fn circle(&mut self, x: i32, y: i32, r: u32) {
 		if let Some(c) = self.fill_color {
 			self.canvas.set_draw_color(c);
 			self.canvas.filled_circle(x as i16, y as i16, r as i16, c).unwrap();

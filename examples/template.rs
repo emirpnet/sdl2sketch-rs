@@ -5,18 +5,19 @@
 use sdl2sketch::*;
 
 
-const MOVER_SIZE: u32 = 25;
-
 struct GlobalState {
 	pos: (i32, i32),
 	vel: (i32, i32),
+	size: i32,
 }
+
 
 fn main() {
 	let mut s = Sketch::new(640, 480, "Title");
 	let mut g = GlobalState {
 		pos: (50, 50),
-		vel: (2, 1),
+		vel: (4, 2),
+		size: 15,
 	};
 	sdl2sketch_run!(&mut s, &mut g);
 }
@@ -31,10 +32,10 @@ fn draw(s: &mut Sketch, g: &mut GlobalState) {
 	//update
 	g.pos.0 += g.vel.0;
 	g.pos.1 += g.vel.1;
-	if g.pos.0 <= 0 || g.pos.0 + MOVER_SIZE as i32 >= s.width() {
+	if g.pos.0 - g.size <= 0 || g.pos.0 + g.size >= s.width() {
 		g.vel.0 *= -1;
 	}
-	if g.pos.1 <= 0 || g.pos.1 + MOVER_SIZE as i32 >= s.height() {
+	if g.pos.1 - g.size <= 0 || g.pos.1 + g.size >= s.height() {
 		g.vel.1 *= -1;
 	}
 
@@ -44,12 +45,12 @@ fn draw(s: &mut Sketch, g: &mut GlobalState) {
 	s.stroke(Color::RGB(255, 255, 255));
 	s.line(10, 10, 630, 470);
 
-	s.no_stroke();
-	s.fill(Color::RGB(255, 0, 0));
-	s.circle(320, 240, 80);
-
 	s.stroke(Color::RGB(0, 0, 255));
 	s.fill(Color::RGB(0, 255, 255));
-	s.rect(g.pos.0, g.pos.1, MOVER_SIZE, MOVER_SIZE);
+	s.rect(256, 192, 128, 96);
+
+	s.no_stroke();
+	s.fill(Color::RGB(255, 0, 0));
+	s.circle(g.pos.0, g.pos.1, g.size as u32);
 }
 
