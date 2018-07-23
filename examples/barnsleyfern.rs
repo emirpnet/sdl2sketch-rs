@@ -1,4 +1,4 @@
-#[macro_use] extern crate sdl2sketch;
+extern crate sdl2sketch;
 extern crate rand;
 extern crate mylib;
 
@@ -11,28 +11,30 @@ struct Point {
 	y: f32
 }
 
-fn main() {
-	let mut s = Sketch::new(480, 640, "Barnsley fern");
-	let mut pt = Point { x: 0.0, y: 0.0 };
-	sdl2sketch_run!(&mut s, &mut pt);
-}
+impl MainLoopMethods for Point {
+	fn setup(&mut self, s: &mut Sketch) {
+		s.set_framerate(120);
+		s.background(Color::RGB(33, 33, 33));
+		s.stroke(Color::RGB(0, 220, 0));
+	}
 
-fn setup(s: &mut Sketch, _pt: &mut Point) {
-	s.set_framerate(120);
-	s.background(Color::RGB(33, 33, 33));
-	s.stroke(Color::RGB(0, 220, 0));
-}
-
-fn draw(s: &mut Sketch, pt: &mut Point) {
-	for _i in 0..20 {
-		next_pt(pt);
-		let px = map(pt.x, -2.1820, 2.6558, 0.0, s.width() as f32) as i32;
-		let py = map(pt.y, 0.0, 9.9983, s.height() as f32, 0.0) as i32;
-		s.point(px, py);
+	fn draw(&mut self, s: &mut Sketch) {
+		for _i in 0..50 {
+			set_next_pt(self);
+			let px = map(self.x, -2.1820, 2.6558, 0.0, s.width() as f32) as i32;
+			let py = map(self.y, 0.0, 9.9983, s.height() as f32, 0.0) as i32;
+			s.point(px, py);
+		}
 	}
 }
 
-fn next_pt(pt: &mut Point) {
+fn main() {
+	let mut s = Sketch::new(480, 640, "Barnsley fern");
+	let mut pt = Point { x: 0.0, y: 0.0 };
+	sdl2sketch::run(&mut s, &mut pt);
+}
+
+fn set_next_pt(pt: &mut Point) {
 	
 	let trans = [ // Barnsley fern
 		[ 0.00, 0.00, 0.00, 0.16, 0.00, 0.00, 0.01],

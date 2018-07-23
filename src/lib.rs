@@ -11,30 +11,39 @@ pub mod utils;
 pub type Color = sdl2::pixels::Color;
 
 
-#[macro_export]
-macro_rules! sdl2sketch_run {
-	($sketch:expr, $globals:expr) => {
-		$sketch.running = true;
-		setup($sketch, $globals);
-		while $sketch.running {
-			$sketch.handle_events(); // TODO
-			draw($sketch, $globals);
-			$sketch.present();
-			$sketch.delay();
-		}
-	};
-	($sketch:expr) => {
-		$sketch.running = true;
-		setup($sketch);
-		while $sketch.running {
-			$sketch.handle_events(); // TODO
-			draw($sketch);
-			$sketch.present();
-			$sketch.delay();
-		}
-	};
+pub fn run<T: MainLoopMethods>(s: &mut Sketch, g: &mut T) {
+	g.setup(s);
+	s.running = true;
+	while s.running {
+		handle_events(s, g);
+		g.update(s);
+		g.draw(s);
+		s.present();
+		s.delay();
+	}
 }
 
+fn handle_events<T: MainLoopMethods>(s: &mut Sketch, g: &mut T) {
+	while let Some(event) = s.event_pump.poll_event() {
+		match event {
+			Event::KeyDown { .. } => { g.key_pressed(s, &event); },
+			_ => {}
+		}
+	}
+}
+
+pub trait MainLoopMethods {
+	fn setup(&mut self, _s: &mut Sketch) {}
+	fn update(&mut self, _s: &mut Sketch){}
+	fn draw(&mut self, _s: &mut Sketch) {}
+	
+	fn key_pressed(&mut self, s: &mut Sketch, e: &Event) {
+		match e {
+			&Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { s.running = false; },
+			_ => {}
+		}
+	}
+}
 
 pub struct Sketch {
 	pub running: bool,
@@ -70,16 +79,6 @@ impl Sketch {
 			canvas,
 			event_pump,
 			fps_manager: FPSManager::new(),
-		}
-	}
-
-	pub fn handle_events(&mut self) {
-		for event in self.event_pump.poll_iter() {
-			match event {
-				Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { self.running = false; },
-				//Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { self.quit(); },
-				_ => {}
-			}
 		}
 	}
 

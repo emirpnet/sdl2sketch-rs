@@ -1,10 +1,9 @@
-#[macro_use] extern crate sdl2sketch;
+extern crate sdl2sketch;
 extern crate mylib;
 extern crate rand;
 
 use sdl2sketch::*;
 use rand::Rng;
-
 
 const WIDTH: i32 = 649;
 const HEIGHT: i32 = WIDTH;
@@ -13,7 +12,6 @@ const NROWS: i32 = (WIDTH+1) / BS;
 const NCOLS: i32 = (HEIGHT+1) / BS;
 const INIT_LIFE_PROB: f32 = 0.06;
 
-type Cells = Vec<Cell>;
 
 fn index(row: i32, col: i32) -> usize {
 	(row * NCOLS + col) as usize
@@ -22,34 +20,44 @@ fn index(row: i32, col: i32) -> usize {
 
 fn main() {
 	let mut s = Sketch::new(WIDTH as u32, HEIGHT as u32, "Game of Life");
-	let mut universe = generate_random_start();
-	sdl2sketch_run!(&mut s, &mut universe);
+	let mut universe = Universe::new();
+	sdl2sketch::run(&mut s, &mut universe);
 }
 
-fn generate_random_start() -> Cells {
-	let mut universe: Cells = Vec::new();
-	for i in 0..NROWS {
-		for j in 0..NCOLS {
-			let r: f32 = rand::thread_rng().gen();
-			universe.push(Cell::new(i, j, r < INIT_LIFE_PROB));
+#[derive(Clone)]
+struct Universe {
+	cells: Vec<Cell>,
+}
+
+impl Universe {
+	fn new() -> Universe { // generates random start
+		let mut cells = Vec::new();
+		for i in 0..NROWS {
+			for j in 0..NCOLS {
+				let r: f32 = rand::thread_rng().gen();
+				cells.push(Cell::new(i, j, r < INIT_LIFE_PROB));
+			}
 		}
+
+		Universe { cells }
 	}
-	universe
 }
 
-fn setup(s: &mut Sketch, _universe: &mut Cells) {
-	s.set_framerate(30);
-}
+impl MainLoopMethods for Universe {
+	fn setup(&mut self, s: &mut Sketch) {
+		s.set_framerate(30);
+	}
 
-fn draw(s: &mut Sketch, universe: &mut Cells) {
-	s.background(Color::RGB(33, 33, 33));
+	fn draw(&mut self, s: &mut Sketch) {
+		s.background(Color::RGB(33, 33, 33));
 
-	let prev = universe.clone();
+		let prev = self.clone();
 
-	for i in 0..NROWS {
-		for j in 0..NCOLS {
-			universe[index(i, j)].update(&prev);
-			universe[index(i, j)].draw(s);
+		for i in 0..NROWS {
+			for j in 0..NCOLS {
+				self.cells[index(i, j)].update(&prev);
+				self.cells[index(i, j)].draw(s);
+			}
 		}
 	}
 }
@@ -85,7 +93,7 @@ impl Cell {
 		}
 	}
 
-	pub fn update(&mut self, universe: &Cells) {
+	pub fn update(&mut self, universe: &Universe) {
 		let prev_alive = self.alive;
 		self.alive = match (self.alive, self.count_neighbours(universe)) {
 			(true, 2...3) => true,
@@ -99,22 +107,22 @@ impl Cell {
 		}
 	}
 
-	fn count_neighbours(&self, universe: &Cells) -> i32 {
+	fn count_neighbours(&self, universe: &Universe) -> i32 {
 		let neighbour_indices = self.get_neighbour_indices(true);
 		let mut count = 0;
 		for i in neighbour_indices {
-			if universe[i].alive { count += 1; }
+			if universe.cells[i].alive { count += 1; }
 		}
 		count
 	}
 
-	fn get_avg_hue(&self, universe: &Cells) -> Color {
+	fn get_avg_hue(&self, universe: &Universe) -> Color {
 		let neighbour_indices = self.get_neighbour_indices(true);
 		let mut sum = 0;
 		let mut count = 0;
 		for i in neighbour_indices {
-			if universe[i].alive {
-				let hsv = utils::rgb_to_hsv(universe[i].color.r, universe[i].color.g, universe[i].color.b);
+			if universe.cells[i].alive {
+				let hsv = utils::rgb_to_hsv(universe.cells[i].color.r, universe.cells[i].color.g, universe.cells[i].color.b);
 				sum += hsv.0;
 				count += 1;
 			}
