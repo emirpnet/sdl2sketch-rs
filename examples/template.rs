@@ -2,13 +2,13 @@ extern crate sdl2sketch;
 use sdl2sketch::*;
 
 
-struct GlobalState {
+struct MainState {
 	pos: (i32, i32),
 	vel: (i32, i32),
 	size: i32,
 }
 
-impl MainLoopMethods for GlobalState {
+impl MainLoopMethods for MainState {
 	fn setup(&mut self, s: &mut Sketch) {
 		s.set_framerate(30);
 		//s.no_smooth();
@@ -43,11 +43,11 @@ impl MainLoopMethods for GlobalState {
 
 fn main() {
 	let mut s = Sketch::new(640, 480, "Title");
-	let mut g = GlobalState {
+	let mut m = MainState {
 		pos: (50, 50),
 		vel: (4, 2),
 		size: 15,
 	};
-	sdl2sketch::run(&mut s, &mut g);
+	sdl2sketch::run(&mut s, &mut m);
 }
 

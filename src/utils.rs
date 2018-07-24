@@ -1,7 +1,9 @@
 const FTOL: f32 = 0.0001;
 
+/// utility function to convert a HSV color value to RGB (EXPERIMENTAL)
+///
+/// source of algorithm: https://www.rapidtables.com/convert/color/hsv-to-rgb.html
 pub fn hsv_to_rgb(hue: u16, sat: f32, val: f32) -> (u8, u8, u8) {
-	// source: https://www.rapidtables.com/convert/color/hsv-to-rgb.html
 	let c = sat * val;
 	let x = (1 - (((hue % 360) as f32 / 60.0).round() as i32 % 2 - 1).abs()) as f32 * c;
 	let m = val - c;
@@ -19,8 +21,10 @@ pub fn hsv_to_rgb(hue: u16, sat: f32, val: f32) -> (u8, u8, u8) {
 	(((rgb_pre.0+m)*255.0).ceil() as u8, ((rgb_pre.1+m)*255.0).ceil() as u8, ((rgb_pre.2+m)*255.0).ceil() as u8)
 }
 
+/// utility function to convert a RGB color value to HSV (EXPERIMENTAL)
+///
+/// source of algorithm : https://www.rapidtables.com/convert/color/rgb-to-hsv.html
 pub fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (u16, f32, f32) {
-	// source: https://www.rapidtables.com/convert/color/rgb-to-hsv.html
 	let r = r as f32 / 255.0;
 	let g = g as f32 / 255.0;
 	let b = b as f32 / 255.0;
