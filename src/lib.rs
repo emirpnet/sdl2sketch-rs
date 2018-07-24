@@ -180,9 +180,7 @@ impl Sketch {
 	// TODO:
 	// handle stroke_width (!)
 	// pub fn quad(&mut self, ...
-	// pub fn triangle(&mut self, ...
 	// pub fn arc(&mut self, ...
-	// pub fn ellipse(&mut self, ...
 	// pub fn vertex(&mut self, ...
 
 	/// draws pixel-sized point at the provided coordinates
@@ -219,6 +217,47 @@ impl Sketch {
 		}
 	}
 
+	// TODO: to be tested!
+	/// draws a polygon
+	///
+	/// from SDL2-gfx API, not p5.js
+	pub fn polygon(&mut self, vx: &[i16], vy: &[i16]) { // TODO: i16 -> i32
+		if let Some(c) = self.fill_color {
+			self.canvas.set_draw_color(c);
+			self.canvas.filled_polygon(vy, vx, c).unwrap();
+			if self.smooth && self.stroke_color == None {
+				self.canvas.aa_polygon(vy, vx, c).unwrap();
+			}
+		}
+		if let Some(c) = self.stroke_color {
+			self.canvas.set_draw_color(c);
+			if self.smooth {
+				self.canvas.aa_polygon(vy, vx, c).unwrap();
+			} else {
+				self.canvas.polygon(vy, vx, c).unwrap();
+			}
+		}
+	}
+
+	/// draws a triangle
+	pub fn triangle(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32) {
+		if let Some(c) = self.fill_color {
+			self.canvas.set_draw_color(c);
+			self.canvas.filled_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap();
+			if self.smooth && self.stroke_color == None {
+				self.canvas.aa_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap();
+			}
+		}
+		if let Some(c) = self.stroke_color {
+			self.canvas.set_draw_color(c);
+			if self.smooth {
+				self.canvas.aa_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap();
+			} else {
+				self.canvas.trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap();
+			}
+		}
+	}
+
 	/// draws a circle
 	pub fn circle(&mut self, x: i32, y: i32, r: u32) {
 		if let Some(c) = self.fill_color {
@@ -238,6 +277,25 @@ impl Sketch {
 		}
 	}
 
+	/// draws an ellipse
+	pub fn ellipse(&mut self, x: i32, y: i32, w: u32, h: u32) {
+		if let Some(c) = self.fill_color {
+			self.canvas.set_draw_color(c);
+			self.canvas.filled_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap();
+			if self.smooth && self.stroke_color == None {
+				self.canvas.aa_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap();
+			}
+		}
+		if let Some(c) = self.stroke_color {
+			self.canvas.set_draw_color(c);
+			if self.smooth {
+				self.canvas.aa_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap();
+			} else {
+				self.canvas.ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap();
+			}
+		}
+	}
+	
 }
 
 

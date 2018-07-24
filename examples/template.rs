@@ -35,6 +35,14 @@ impl MainLoopMethods for MainState {
 		s.fill(Color::RGB(0, 255, 255));
 		s.rect(256, 192, 128, 96);
 
+		s.stroke(Color::RGB(0, 0, 255));
+		s.fill(Color::RGB(0, 255, 0));
+		s.triangle(400, 90, 470, 80, 430, 50);
+
+		s.stroke(Color::RGB(0, 0, 255));
+		s.fill(Color::RGB(255, 255, 0));
+		s.ellipse(100, 350, 50, 30);
+
 		s.no_stroke();
 		s.fill(Color::RGB(255, 0, 0));
 		s.circle(self.pos.0, self.pos.1, self.size as u32);
