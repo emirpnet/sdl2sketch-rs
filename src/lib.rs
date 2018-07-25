@@ -141,7 +141,7 @@ impl Sketch {
 	/// After calling this function primitives will be drawn with an outline in the provided color.
 	pub fn stroke(&mut self, color: Color) {
 		self.stroke_color = Some(color);
-		self.canvas.set_draw_color(color); // TODO: check ok!?
+		self.canvas.set_draw_color(color);
 	}
 
 	/// After calling this function primitives will be drawn without outline.
@@ -217,24 +217,43 @@ impl Sketch {
 		}
 	}
 
-	// TODO: to be tested!
-	/// draws a polygon
+	/// draws a polygon (EXPERIMENTAL)
 	///
-	/// from SDL2-gfx API, not p5.js
-	pub fn polygon(&mut self, vx: &[i16], vy: &[i16]) { // TODO: i16 -> i32
+	/// SDL2-gfx API, not p5.js
+	pub fn polygon(&mut self, vx32: &[i32], vy32: &[i32]) {
+
+		// check if coordinates slices are same length and > 0
+		if vx32.len() != vy32.len() {
+			eprintln!("Error drawing polygon: unequal number of coordinates ({}/{})", vx32.len(), vy32.len());
+			return;
+		}
+		if vx32.len() == 0 {
+			eprintln!("Error drawing polygon: no coordinates provided");
+			return;
+		}
+		
+		// convert i32 to i16 (TODO: find a more efficient way)
+		let mut vx = Vec::new();
+		let mut vy = Vec::new();
+		for i in 0..vx32.len() {
+			//println!("{}: ({},{})", i, vx32[i], vy32[i]); // DEBUG
+			vx.push(vx32[i] as i16);
+			vy.push(vy32[i] as i16);
+		}
+
 		if let Some(c) = self.fill_color {
 			self.canvas.set_draw_color(c);
-			self.canvas.filled_polygon(vy, vx, c).unwrap();
+			self.canvas.filled_polygon(&vx, &vy, c).unwrap();
 			if self.smooth && self.stroke_color == None {
-				self.canvas.aa_polygon(vy, vx, c).unwrap();
+				self.canvas.aa_polygon(&vx, &vy, c).unwrap();
 			}
 		}
 		if let Some(c) = self.stroke_color {
 			self.canvas.set_draw_color(c);
 			if self.smooth {
-				self.canvas.aa_polygon(vy, vx, c).unwrap();
+				self.canvas.aa_polygon(&vx, &vy, c).unwrap();
 			} else {
-				self.canvas.polygon(vy, vx, c).unwrap();
+				self.canvas.polygon(&vx, &vy, c).unwrap();
 			}
 		}
 	}
@@ -256,6 +275,14 @@ impl Sketch {
 				self.canvas.trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap();
 			}
 		}
+	}
+
+	/// draws a quad (EXPERIMENTAL)
+	pub fn quad(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32, x4: i32, y4: i32) {
+		let vx = [x1, x2, x3, x4];
+		let vy = [y1, y2, y3, y4];
+		// TODO: probably some coordinate sorting necessary here
+		self.polygon(&vx, &vy);
 	}
 
 	/// draws a circle

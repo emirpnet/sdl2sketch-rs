@@ -40,6 +40,10 @@ impl MainLoopMethods for MainState {
 		s.triangle(400, 90, 470, 80, 430, 50);
 
 		s.stroke(Color::RGB(0, 0, 255));
+		s.fill(Color::RGB(0, 255, 0));
+		s.quad(500, 350, 550, 400, 550, 450, 500, 400);
+
+		s.stroke(Color::RGB(0, 0, 255));
 		s.fill(Color::RGB(255, 255, 0));
 		s.ellipse(100, 350, 50, 30);
 
