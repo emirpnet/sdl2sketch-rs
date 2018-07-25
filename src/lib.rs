@@ -179,7 +179,7 @@ impl Sketch {
 
 	// TODO:
 	// handle stroke_width (!)
-	// pub fn quad(&mut self, ...
+	// remove unwrap() in favor of error message and continue
 	// pub fn arc(&mut self, ...
 	// pub fn vertex(&mut self, ...
 
@@ -277,12 +277,24 @@ impl Sketch {
 		}
 	}
 
-	/// draws a quad (EXPERIMENTAL)
+	/// draws a quad (NOT COMPLETE)
 	pub fn quad(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32, x4: i32, y4: i32) {
-		let vx = [x1, x2, x3, x4];
-		let vy = [y1, y2, y3, y4];
-		// TODO: probably some coordinate sorting necessary here
+		let vx = [x1, x2, x3, x4, x1];
+		let vy = [y1, y2, y3, y4, y1];
+		// TODO: coordinate sorting necessary here!
 		self.polygon(&vx, &vy);
+	}
+
+	/// draws arc (NOT COMPLETE)
+	///
+	/// parameters are from SDL2-gfx API, not p5.js, (TODO)
+	/// which means this is a circle arc not an ellipse arc and
+	/// the start/end parameters are in DEG not RAD (TODO),
+	/// fill option not available (TODO)
+	pub fn arc(&mut self, x: i32, y: i32, r: u32, start: i32, end: i32) {
+		if let Some(c) = self.stroke_color {
+			self.canvas.arc(x as i16, y as i16, r as i16, start as i16, end as i16, c).unwrap();
+		}
 	}
 
 	/// draws a circle
