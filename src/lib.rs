@@ -1,4 +1,5 @@
 extern crate sdl2;
+extern crate sdl2_sys;
 
 use sdl2::render::Canvas;
 use sdl2::EventPump;
@@ -6,6 +7,7 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::gfx::framerate::FPSManager;
 use sdl2::gfx::primitives::DrawRenderer;
+use sdl2_sys::SDL_GetTicks;
 
 /// module containing utility functions
 pub mod utils;
@@ -24,6 +26,7 @@ pub fn run<T: MainLoopMethods>(s: &mut Sketch, m: &mut T) {
 		m.draw(s);
 		s.present();
 		s.delay();
+		s.fps_data.update();
 	}
 }
 
@@ -61,7 +64,7 @@ pub trait MainLoopMethods {
 	}
 }
 
-/// Options for the interpretation of the parameters given to rect()
+/// options for the interpretation of the parameters given to rect()
 pub enum RectMode {
 	/// CORNER (default): Coordinates of the upper left corner (x, y), width (w) and height (h)
 	CORNER,
@@ -72,6 +75,43 @@ pub enum RectMode {
 	/// RADIUS: Coordinates of the center (x, y), half width (w) and half height (h)
 	RADIUS,
 }
+
+/// This struct collects all data to calculate the current FPS.
+struct FPSData {
+	update_interval: u32, // in ms
+	print_fps: bool,
+	current_fps: f32,
+	last_update: u32,
+	num_frames: u32,
+}
+
+impl FPSData {
+	fn new(update_interval: u32, print_fps: bool) -> Self {
+		FPSData {
+			update_interval,
+			print_fps,
+			current_fps: 0.0,
+			last_update: unsafe { SDL_GetTicks() },
+			num_frames: 0,
+		}
+	}
+
+	fn update(&mut self) {
+		let now = unsafe { SDL_GetTicks() };
+		let time_diff = now - self.last_update;
+		if time_diff > self.update_interval {
+			self.current_fps = (self.num_frames as f32 / time_diff as f32) * 1000.0;
+			self.last_update = now;
+			self.num_frames = 0;
+			if self.print_fps {
+				println!("FPS = {:.2}", self.current_fps);
+			}
+		} else {
+			self.num_frames += 1;
+		}
+	}
+}
+
 
 /// This struct contains the necessary SDL2 subsystem objects and provides most of the API.
 pub struct Sketch {
@@ -86,6 +126,7 @@ pub struct Sketch {
 	canvas: Canvas<sdl2::video::Window>,
 	event_pump: EventPump,
 	fps_manager: FPSManager,
+	fps_data: FPSData,
 }
 
 
@@ -108,6 +149,7 @@ impl Sketch {
 			canvas,
 			event_pump,
 			fps_manager: FPSManager::new(),
+			fps_data: FPSData::new(1000, false), // parameter sets update interval in ms
 		}
 	}
 
@@ -121,7 +163,12 @@ impl Sketch {
 		self.height as i32
 	}
 	
-	/// sets the framerate in frames per second
+	/// returns the current framerate in frames per second
+	pub fn get_framerate(&mut self) -> f32 {
+		self.fps_data.current_fps
+	}
+
+	/// sets the max. framerate in frames per second
 	pub fn set_framerate(&mut self, fps: u32) {
 		self.fps_manager.set_framerate(fps).unwrap();
 	}
@@ -189,7 +236,7 @@ impl Sketch {
 		self.smooth = false;
 	}
 
-	/// After calling this function primitives will be drawn without anti-aliasing. (rugged outline but faster)
+	/// After calling this function the parameters of all subsequent calls to rect() will be interpreted according to the provided mode.
 	pub fn rect_mode(&mut self, mode: RectMode) {
 		self.rect_mode = mode;
 	}
@@ -211,7 +258,7 @@ impl Sketch {
 	}
 
 	/// draws a rectangle
-	pub fn rect(&mut self, x: i32, y: i32, w: u32, h: u32) {
+	pub fn rect(&mut self, x: i32, y: i32, w: u32, h: u32) { // TODO: u32 for w and h is a problem when in RectMode::CORNERS!
 
 		let (x, y, w, h) = self.rect_parameters(x, y, w, h);
 

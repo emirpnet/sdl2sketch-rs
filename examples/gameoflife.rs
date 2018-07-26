@@ -45,7 +45,7 @@ impl Universe {
 
 impl MainLoopMethods for Universe {
 	fn setup(&mut self, s: &mut Sketch) {
-		s.set_framerate(30);
+		s.set_framerate(25);
 	}
 
 	fn draw(&mut self, s: &mut Sketch) {
