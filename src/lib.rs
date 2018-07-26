@@ -76,7 +76,7 @@ pub enum RectMode {
 	RADIUS,
 }
 
-/// This struct collects all data to calculate the current FPS.
+/// This struct collects framerate data and calculates the current fps.
 struct FPSData {
 	update_interval: u32, // in ms
 	print_fps: bool,
@@ -86,10 +86,10 @@ struct FPSData {
 }
 
 impl FPSData {
-	fn new(update_interval: u32, print_fps: bool) -> Self {
+	fn new(update_interval: u32) -> Self {
 		FPSData {
 			update_interval,
-			print_fps,
+			print_fps: std::env::var("SDL2SKETCH_PRINTFPS").is_ok(),
 			current_fps: 0.0,
 			last_update: unsafe { SDL_GetTicks() },
 			num_frames: 0,
@@ -104,7 +104,7 @@ impl FPSData {
 			self.last_update = now;
 			self.num_frames = 0;
 			if self.print_fps {
-				println!("FPS = {:.2}", self.current_fps);
+				println!("FPS: {:.2}", self.current_fps);
 			}
 		} else {
 			self.num_frames += 1;
@@ -149,7 +149,7 @@ impl Sketch {
 			canvas,
 			event_pump,
 			fps_manager: FPSManager::new(),
-			fps_data: FPSData::new(1000, false), // parameter sets update interval in ms
+			fps_data: FPSData::new(1000), // parameter sets update interval in ms
 		}
 	}
 
@@ -170,7 +170,7 @@ impl Sketch {
 
 	/// sets the max. framerate in frames per second
 	pub fn set_framerate(&mut self, fps: u32) {
-		self.fps_manager.set_framerate(fps).unwrap();
+		self.fps_manager.set_framerate(fps).unwrap_or_else( |e| { eprintln!("SDL2-gfx set_framerate() failed. {}", e); } );
 	}
 
 	/// delays the sketch to provide a constant framerate
@@ -245,7 +245,6 @@ impl Sketch {
 
 	// TODO:
 	// handle stroke_width (!)
-	// remove unwrap() in favor of error message and continue
 	// pub fn arc(&mut self, ...
 	// pub fn vertex(&mut self, ...
 
@@ -253,7 +252,7 @@ impl Sketch {
 	pub fn point(&mut self, x: i32, y: i32) {
 		if let Some(c) = self.stroke_color {
 			self.canvas.set_draw_color(c);
-			self.canvas.draw_point(sdl2::rect::Point::new(x, y)).unwrap();
+			self.canvas.draw_point(sdl2::rect::Point::new(x, y)).unwrap_or_else( |e| { eprintln!("SDL2 draw_point() failed. {}", e); } );
 		}
 	}
 
@@ -264,12 +263,12 @@ impl Sketch {
 
 		if let Some(c) = self.fill_color {
 			self.canvas.set_draw_color(c);
-			self.canvas.fill_rect(sdl2::rect::Rect::new(x, y, w, h)).unwrap();
+			self.canvas.fill_rect(sdl2::rect::Rect::new(x, y, w, h)).unwrap_or_else( |e| { eprintln!("SDL2 fill_rect() failed. {}", e); } );
 		}
 		if let Some(c) = self.stroke_color {
 			self.canvas.set_draw_color(c);
-			self.canvas.draw_rect(sdl2::rect::Rect::new(x, y, w, h)).unwrap();
-			self.canvas.draw_point(sdl2::rect::Point::new(x-1+w as i32, y-1+h as i32)).unwrap(); // fix for missing point in bottom-right corner of draw_rect()
+			self.canvas.draw_rect(sdl2::rect::Rect::new(x, y, w, h)).unwrap_or_else( |e| { eprintln!("SDL2 draw_rect() failed. {}", e); } );
+			self.canvas.draw_point(sdl2::rect::Point::new(x-1+w as i32, y-1+h as i32)).unwrap_or_else( |e| { eprintln!("SDL2 draw_point() failed. {}", e); } ); // fix for missing point in bottom-right corner of draw_rect()
 		}
 	}
 
@@ -288,10 +287,10 @@ impl Sketch {
 		if let Some(c) = self.stroke_color {
 			self.canvas.set_draw_color(c);
 			if self.smooth {
-				self.canvas.aa_line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, c).unwrap();
+				self.canvas.aa_line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_line() failed. {}", e); } );
 			} else {
-				self.canvas.line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, c).unwrap();
-				//self.canvas.thick_line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, self.stroke_weight, c).unwrap();
+				self.canvas.line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx line() failed. {}", e); } );
+				//self.canvas.thick_line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, self.stroke_weight, c).unwrap_or_else( |e| { eprintln!("SDL-gfx line() failed. {}", e); } );
 			}
 		}
 	}
@@ -322,17 +321,17 @@ impl Sketch {
 
 		if let Some(c) = self.fill_color {
 			self.canvas.set_draw_color(c);
-			self.canvas.filled_polygon(&vx, &vy, c).unwrap();
+			self.canvas.filled_polygon(&vx, &vy, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_polygon() failed. {}", e); } );
 			if self.smooth && self.stroke_color == None {
-				self.canvas.aa_polygon(&vx, &vy, c).unwrap();
+				self.canvas.aa_polygon(&vx, &vy, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_polygon() failed. {}", e); } );
 			}
 		}
 		if let Some(c) = self.stroke_color {
 			self.canvas.set_draw_color(c);
 			if self.smooth {
-				self.canvas.aa_polygon(&vx, &vy, c).unwrap();
+				self.canvas.aa_polygon(&vx, &vy, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_polygon() failed. {}", e); } );
 			} else {
-				self.canvas.polygon(&vx, &vy, c).unwrap();
+				self.canvas.polygon(&vx, &vy, c).unwrap_or_else( |e| { eprintln!("SDL-gfx polygon() failed. {}", e); } );
 			}
 		}
 	}
@@ -341,17 +340,17 @@ impl Sketch {
 	pub fn triangle(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32) {
 		if let Some(c) = self.fill_color {
 			self.canvas.set_draw_color(c);
-			self.canvas.filled_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap();
+			self.canvas.filled_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_trigon() failed. {}", e); } );
 			if self.smooth && self.stroke_color == None {
-				self.canvas.aa_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap();
+				self.canvas.aa_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_trigon() failed. {}", e); } );
 			}
 		}
 		if let Some(c) = self.stroke_color {
 			self.canvas.set_draw_color(c);
 			if self.smooth {
-				self.canvas.aa_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap();
+				self.canvas.aa_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_trigon() failed. {}", e); } );
 			} else {
-				self.canvas.trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap();
+				self.canvas.trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx trigon() failed. {}", e); } );
 			}
 		}
 	}
@@ -372,7 +371,7 @@ impl Sketch {
 	/// fill option not available (TODO)
 	pub fn arc(&mut self, x: i32, y: i32, r: u32, start: i32, end: i32) {
 		if let Some(c) = self.stroke_color {
-			self.canvas.arc(x as i16, y as i16, r as i16, start as i16, end as i16, c).unwrap();
+			self.canvas.arc(x as i16, y as i16, r as i16, start as i16, end as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx arc() failed. {}", e); } );
 		}
 	}
 
@@ -380,17 +379,17 @@ impl Sketch {
 	pub fn circle(&mut self, x: i32, y: i32, r: u32) {
 		if let Some(c) = self.fill_color {
 			self.canvas.set_draw_color(c);
-			self.canvas.filled_circle(x as i16, y as i16, r as i16, c).unwrap();
+			self.canvas.filled_circle(x as i16, y as i16, r as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_circle() failed. {}", e); } );
 			if self.smooth && self.stroke_color == None {
-				self.canvas.aa_circle(x as i16, y as i16, r as i16, c).unwrap();
+				self.canvas.aa_circle(x as i16, y as i16, r as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_circle() failed. {}", e); } );
 			}
 		}
 		if let Some(c) = self.stroke_color {
 			self.canvas.set_draw_color(c);
 			if self.smooth {
-				self.canvas.aa_circle(x as i16, y as i16, r as i16, c).unwrap();
+				self.canvas.aa_circle(x as i16, y as i16, r as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_circle() failed. {}", e); } );
 			} else {
-				self.canvas.circle(x as i16, y as i16, r as i16, c).unwrap();
+				self.canvas.circle(x as i16, y as i16, r as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx circle() failed. {}", e); } );
 			}
 		}
 	}
@@ -399,17 +398,17 @@ impl Sketch {
 	pub fn ellipse(&mut self, x: i32, y: i32, w: u32, h: u32) {
 		if let Some(c) = self.fill_color {
 			self.canvas.set_draw_color(c);
-			self.canvas.filled_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap();
+			self.canvas.filled_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_ellipse() failed. {}", e); } );
 			if self.smooth && self.stroke_color == None {
-				self.canvas.aa_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap();
+				self.canvas.aa_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_ellipse() failed. {}", e); } );
 			}
 		}
 		if let Some(c) = self.stroke_color {
 			self.canvas.set_draw_color(c);
 			if self.smooth {
-				self.canvas.aa_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap();
+				self.canvas.aa_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_ellipse() failed. {}", e); } );
 			} else {
-				self.canvas.ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap();
+				self.canvas.ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx ellipse() failed. {}", e); } );
 			}
 		}
 	}
@@ -419,16 +418,16 @@ impl Sketch {
 
 /// initializes the necessary SDL2 subsystems and returns a SDL2 window/renderer and event pump
 fn init_sdl_subsystems(width: u32, height: u32, title: &str) -> (Canvas<sdl2::video::Window>, EventPump) {
-	let sdl_context = sdl2::init().unwrap();
-	let video_subsystem = sdl_context.video().unwrap();
+	let sdl_context = sdl2::init().expect("SDL2 init() failed. Abort.");
+	let video_subsystem = sdl_context.video().expect("Initialization of SDL2 video subsystem failed. Abort.");
 	let window = video_subsystem.window(title, width, height)
 		.position_centered()
 		.opengl()
-		.build().unwrap();
+		.build().expect("Initialization of SDL2 window failed. Abort.");
 	let canvas = window.into_canvas()
 		.accelerated()
-		.build().unwrap();
-	let event_pump = sdl_context.event_pump().unwrap();
+		.build().expect("Initialization of SDL2 canvas failed. Abort.");
+	let event_pump = sdl_context.event_pump().expect("Initialization of SDL2 event pump failed. Abort.");
 	(canvas, event_pump)
 }
 

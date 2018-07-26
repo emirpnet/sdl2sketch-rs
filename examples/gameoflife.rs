@@ -5,11 +5,11 @@ extern crate rand;
 use sdl2sketch::*;
 use rand::Rng;
 
-const WIDTH: i32 = 649;
-const HEIGHT: i32 = WIDTH;
+const WIDTH: i32 = 640;
+const HEIGHT: i32 = 640;
 const BS: i32 = 2;
-const NROWS: i32 = (WIDTH+1) / BS;
-const NCOLS: i32 = (HEIGHT+1) / BS;
+const NCOLS: i32 = (WIDTH+1) / BS;
+const NROWS: i32 = (HEIGHT+1) / BS;
 const INIT_LIFE_PROB: f32 = 0.06;
 
 
