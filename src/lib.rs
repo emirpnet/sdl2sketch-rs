@@ -1,6 +1,7 @@
 extern crate sdl2;
 extern crate sdl2_sys;
 
+use std::{env, thread, time};
 use sdl2::render::Canvas;
 use sdl2::EventPump;
 use sdl2::event::Event;
@@ -27,6 +28,10 @@ pub fn run<T: MainLoopMethods>(s: &mut Sketch, m: &mut T) {
 		s.present();
 		s.delay();
 		s.fps_data.update();
+		while s.no_loop && s.running {
+			thread::sleep(time::Duration::from_millis(250));
+			handle_events(s, m);
+		}
 	}
 }
 
@@ -89,7 +94,7 @@ impl FPSData {
 	fn new(update_interval: u32) -> Self {
 		FPSData {
 			update_interval,
-			print_fps: std::env::var("SDL2SKETCH_PRINTFPS").is_ok(),
+			print_fps: env::var("SDL2SKETCH_PRINTFPS").is_ok(),
 			current_fps: 0.0,
 			last_update: unsafe { SDL_GetTicks() },
 			num_frames: 0,
@@ -116,6 +121,7 @@ impl FPSData {
 /// This struct contains the necessary SDL2 subsystem objects and provides most of the API.
 pub struct Sketch {
 	running: bool,
+	no_loop: bool,
 	width: u32,
 	height: u32,
 	fill_color: Option<Color>,
@@ -139,6 +145,7 @@ impl Sketch {
 		let (canvas, event_pump) = init_sdl_subsystems(width, height, title);
 		Sketch {
 			running: false,
+			no_loop: false,
 			width,
 			height,
 			fill_color: Some(Color::RGB(255, 255, 255)),
@@ -153,12 +160,12 @@ impl Sketch {
 		}
 	}
 
-	/// returns the width in pixels
+	/// returns the width of the sketch in pixels
 	pub fn width(&self) -> i32 {
 		self.width as i32
 	}
 
-	/// returns the height in pixels
+	/// returns the height of the sketch in pixels
 	pub fn height(&self) -> i32 {
 		self.height as i32
 	}
@@ -176,6 +183,13 @@ impl Sketch {
 	/// delays the sketch to provide a constant framerate
 	fn delay(&mut self) {
 		self.fps_manager.delay();
+	}
+
+	/// stops and restarts the main loop
+	///
+	/// In the p5.js API there are two functions for this, noLoop() and loop(). This does not work in rust since "loop" is a keyword, so a bool is needed as a parameter.
+	pub fn no_loop(&mut self, setting: bool) {
+		self.no_loop = setting;
 	}
 
 	/// exits the main loop
@@ -245,7 +259,6 @@ impl Sketch {
 
 	// TODO:
 	// handle stroke_width (!)
-	// pub fn arc(&mut self, ...
 	// pub fn vertex(&mut self, ...
 
 	/// draws pixel-sized point at the provided coordinates
