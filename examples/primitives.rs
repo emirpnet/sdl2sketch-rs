@@ -33,7 +33,12 @@ impl MainLoopMethods for MainState {
 
 		s.stroke(Color::RGB(0, 0, 255));
 		s.fill(Color::RGB(0, 255, 255));
-		s.rect(256, 192, 128, 96);
+		s.rect_mode(RectMode::CENTER);
+		let center_x = (0.5*s.width() as f32) as i32;
+		let center_y = (0.5*s.height() as f32) as i32;
+		let ratio_w = (0.2*s.width() as f32) as u32;
+		let ratio_h = (0.2*s.height() as f32) as u32;
+		s.rect(center_x, center_y, ratio_w, ratio_h);
 
 		s.stroke(Color::RGB(0, 0, 255));
 		s.fill(Color::RGB(0, 255, 0));

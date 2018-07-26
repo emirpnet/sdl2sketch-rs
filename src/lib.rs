@@ -31,6 +31,7 @@ pub fn run<T: MainLoopMethods>(s: &mut Sketch, m: &mut T) {
 fn handle_events<T: MainLoopMethods>(s: &mut Sketch, m: &mut T) {
 	while let Some(event) = s.event_pump.poll_event() {
 		match event {
+			Event::Quit { .. }    => { s.quit(); }
 			Event::KeyDown { .. } => { m.key_pressed(s, &event); },
 			_ => {}
 		}
@@ -60,6 +61,18 @@ pub trait MainLoopMethods {
 	}
 }
 
+/// Options for the interpretation of the parameters given to rect()
+pub enum RectMode {
+	/// CORNER (default): Coordinates of the upper left corner (x, y), width (w) and height (h)
+	CORNER,
+	/// CORNERS: Coordinates of the upper left corner (x, y) and the lower right corner (w, h)
+	CORNERS,
+	/// CENTER: Coordinates of the center (x, y), width (w) and height (h)
+	CENTER,
+	/// RADIUS: Coordinates of the center (x, y), half width (w) and half height (h)
+	RADIUS,
+}
+
 /// This struct contains the necessary SDL2 subsystem objects and provides most of the API.
 pub struct Sketch {
 	running: bool,
@@ -69,6 +82,7 @@ pub struct Sketch {
 	stroke_color: Option<Color>,
 	stroke_weight: u8,
 	smooth: bool,
+	rect_mode: RectMode,
 	canvas: Canvas<sdl2::video::Window>,
 	event_pump: EventPump,
 	fps_manager: FPSManager,
@@ -90,6 +104,7 @@ impl Sketch {
 			stroke_color: Some(Color::RGB(255, 255, 255)),
 			stroke_weight: 1,
 			smooth: true,
+			rect_mode: RectMode::CORNER,
 			canvas,
 			event_pump,
 			fps_manager: FPSManager::new(),
@@ -174,6 +189,10 @@ impl Sketch {
 		self.smooth = false;
 	}
 
+	/// After calling this function primitives will be drawn without anti-aliasing. (rugged outline but faster)
+	pub fn rect_mode(&mut self, mode: RectMode) {
+		self.rect_mode = mode;
+	}
 
 	/* draw primitives */
 
@@ -193,6 +212,9 @@ impl Sketch {
 
 	/// draws a rectangle
 	pub fn rect(&mut self, x: i32, y: i32, w: u32, h: u32) {
+
+		let (x, y, w, h) = self.rect_parameters(x, y, w, h);
+
 		if let Some(c) = self.fill_color {
 			self.canvas.set_draw_color(c);
 			self.canvas.fill_rect(sdl2::rect::Rect::new(x, y, w, h)).unwrap();
@@ -201,6 +223,16 @@ impl Sketch {
 			self.canvas.set_draw_color(c);
 			self.canvas.draw_rect(sdl2::rect::Rect::new(x, y, w, h)).unwrap();
 			self.canvas.draw_point(sdl2::rect::Point::new(x-1+w as i32, y-1+h as i32)).unwrap(); // fix for missing point in bottom-right corner of draw_rect()
+		}
+	}
+
+	/// converts parameters for rect() accroding to setting of rect_mode
+	fn rect_parameters(&mut self, x: i32, y: i32, w: u32, h: u32) -> (i32, i32, u32, u32) {
+		match self.rect_mode {
+			RectMode::CORNER  => (x, y, w, h),
+			RectMode::CORNERS => (x, y, (w as i32 - x).abs() as u32, (h as i32 - y).abs() as u32), // TODO: What happens with negative and mixed up coordinates?
+			RectMode::CENTER  => ((x as f32 - 0.5*w as f32) as i32, (y as f32 - 0.5*h as f32) as i32, w, h),
+			RectMode::RADIUS  => ((x as f32 - 0.5*w as f32) as i32, (y as f32 - 0.5*h as f32) as i32, 2*w, 2*h),
 		}
 	}
 
