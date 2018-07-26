@@ -2,19 +2,20 @@ extern crate sdl2;
 extern crate sdl2_sys;
 
 use std::{env, thread, time};
+use std::collections::HashSet;
 use sdl2::render::Canvas;
 use sdl2::EventPump;
 use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 use sdl2::gfx::framerate::FPSManager;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2_sys::SDL_GetTicks;
 
+// re-exports
+#[doc(no_inline)] pub use sdl2::pixels::Color;
+#[doc(no_inline)] pub use sdl2::keyboard::Keycode;
+
 /// module containing utility functions
 pub mod utils;
-
-/// alias for sdl2::pixels::Color
-pub type Color = sdl2::pixels::Color;
 
 
 /// starts the sketch and runs the main loop
@@ -39,8 +40,9 @@ pub fn run<T: MainLoopMethods>(s: &mut Sketch, m: &mut T) {
 fn handle_events<T: MainLoopMethods>(s: &mut Sketch, m: &mut T) {
 	while let Some(event) = s.event_pump.poll_event() {
 		match event {
-			Event::Quit { .. }    => { s.quit(); }
-			Event::KeyDown { .. } => { m.key_pressed(s, &event); },
+			Event::Quit { .. }                         => { s.quit(); }
+			Event::KeyDown { keycode: Some(code), .. } => { s.keys_down.insert(code); m.key_pressed(s, code); },
+			Event::KeyUp { keycode: Some(code), .. }   => { s.keys_down.remove(&code); m.key_released(s, code); },
 			_ => {}
 		}
 	}
@@ -60,13 +62,16 @@ pub trait MainLoopMethods {
 	
 	/// called inside the main loop on a KeyDown event 
 	///
-	/// The default implementation quits the main loop when the ESC-key is pressed.
-	fn key_pressed(&mut self, s: &mut Sketch, e: &Event) {
-		match e {
-			&Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { s.quit(); },
+	/// The default implementation quits the main loop when Escape is pressed.
+	fn key_pressed(&mut self, s: &mut Sketch, code: Keycode) {
+		match code {
+			Keycode::Escape => { s.quit(); },
 			_ => {}
 		}
 	}
+
+	/// called inside the main loop on a KeyUp event 
+	fn key_released(&mut self, _s: &mut Sketch, _key: Keycode) {}
 }
 
 /// options for the interpretation of the parameters given to rect()
@@ -133,6 +138,7 @@ pub struct Sketch {
 	event_pump: EventPump,
 	fps_manager: FPSManager,
 	fps_data: FPSData,
+	keys_down: HashSet<Keycode>,
 }
 
 
@@ -157,6 +163,7 @@ impl Sketch {
 			event_pump,
 			fps_manager: FPSManager::new(),
 			fps_data: FPSData::new(1000), // parameter sets update interval in ms
+			keys_down: HashSet::with_capacity(12),
 		}
 	}
 
@@ -211,6 +218,12 @@ impl Sketch {
 		}
 	}
 
+	/* status information */
+
+	/// returns if the key with the provided keycode is currently pressed
+	pub fn key_is_down(&self, code: Keycode) -> bool {
+		self.keys_down.contains(&code)
+	}
 
 	/* draw settings */
 

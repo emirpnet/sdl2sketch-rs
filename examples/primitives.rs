@@ -23,6 +23,10 @@ impl MainLoopMethods for MainState {
 		if self.pos.1 - self.size <= 0 || self.pos.1 + self.size >= s.height() {
 			self.vel.1 *= -1;
 		}
+
+		if s.key_is_down(Keycode::Num0) {
+			println!("Zero down.");
+		}
 	}
 
 	fn draw(&mut self, s: &mut Sketch) {
@@ -59,6 +63,13 @@ impl MainLoopMethods for MainState {
 		s.no_stroke();
 		s.fill(Color::RGB(255, 0, 0));
 		s.circle(self.pos.0, self.pos.1, self.size as u32);
+	}
+
+	fn key_released(&mut self, _s: &mut Sketch, code: Keycode) {
+		match code {
+			Keycode::A => { println!("A release"); }
+			_ => {}
+		}
 	}
 }
 
