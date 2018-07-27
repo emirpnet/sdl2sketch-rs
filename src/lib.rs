@@ -6,6 +6,7 @@ use std::collections::HashSet;
 use sdl2::render::Canvas;
 use sdl2::EventPump;
 use sdl2::event::Event;
+use sdl2::mouse::MouseState;
 use sdl2::gfx::framerate::FPSManager;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2_sys::SDL_GetTicks;
@@ -13,6 +14,7 @@ use sdl2_sys::SDL_GetTicks;
 // re-exports
 #[doc(no_inline)] pub use sdl2::pixels::Color;
 #[doc(no_inline)] pub use sdl2::keyboard::Keycode;
+#[doc(no_inline)] pub use sdl2::mouse::MouseButton;
 
 /// module containing utility functions
 pub mod utils;
@@ -40,11 +42,28 @@ pub fn run<T: MainLoopMethods>(s: &mut Sketch, m: &mut T) {
 fn handle_events<T: MainLoopMethods>(s: &mut Sketch, m: &mut T) {
 	while let Some(event) = s.event_pump.poll_event() {
 		match event {
-			Event::Quit { .. }                         => { s.quit(); }
-			Event::KeyDown { keycode: Some(code), .. } => { s.keys_down.insert(code); m.key_pressed(s, code); },
-			Event::KeyUp { keycode: Some(code), .. }   => { s.keys_down.remove(&code); m.key_released(s, code); },
+			Event::Quit { .. }                             => { s.quit(); }
+			Event::KeyDown { keycode: Some(code), .. }     => { s.keys_down.insert(code); m.key_pressed(s, code); },
+			Event::KeyUp { keycode: Some(code), .. }       => { s.keys_down.remove(&code); m.key_released(s, code); },
+			Event::MouseMotion { .. }                      => { handle_mouse_moved(s, m, event); },
+			Event::MouseButtonDown { mouse_btn, x, y, .. } => { m.mouse_pressed(s, mouse_btn, x, y); },
+			Event::MouseButtonUp { mouse_btn, x, y, .. }   => { m.mouse_released(s, mouse_btn, x, y); },
 			_ => {}
 		}
+	}
+}
+
+/// subroutine of the handle_events, i.e. sub-subroutine of the main loop
+fn handle_mouse_moved<T: MainLoopMethods>(s: &mut Sketch, m: &mut T, event: Event) {
+	let (mstate, x, y, xrel, yrel) = match event {
+		Event::MouseMotion { mousestate, x, y, xrel, yrel, .. } => (mousestate, x, y, xrel, yrel),
+		_ => { return; }
+	};
+
+	if mstate.pressed_mouse_buttons().count() > 0 {
+		m.mouse_dragged(s, x, y, xrel, yrel);
+	} else {
+		m.mouse_moved(s, x, y, xrel, yrel);
 	}
 }
 
@@ -72,6 +91,20 @@ pub trait MainLoopMethods {
 
 	/// called inside the main loop on a KeyUp event 
 	fn key_released(&mut self, _s: &mut Sketch, _key: Keycode) {}
+
+	/// called inside the main loop on a MouseMotion event, if no MouseButton is pressed
+	fn mouse_moved(&mut self, _s: &mut Sketch, _x: i32, _y: i32, _xrel: i32, _yrel: i32) {}
+
+	/// called inside the main loop on a MouseMotion event, if a MouseButton is pressed
+	///
+	/// ignores which button(s) are pressed (TODO)
+	fn mouse_dragged(&mut self, _s: &mut Sketch, _x: i32, _y: i32, _xrel: i32, _yrel: i32) {}
+
+	/// called inside the main loop on a MouseButtonDown event
+	fn mouse_pressed(&mut self, _s: &mut Sketch, _button: MouseButton, _x: i32, _y: i32) {}
+
+	/// called inside the main loop on a MouseButtonUp event
+	fn mouse_released(&mut self, _s: &mut Sketch, _button: MouseButton, _x: i32, _y: i32) {}
 }
 
 /// options for the interpretation of the parameters given to rect()
@@ -220,9 +253,23 @@ impl Sketch {
 
 	/* status information */
 
-	/// returns if the key with the provided keycode is currently pressed
+	/// checks if the key with the provided keycode is currently pressed
 	pub fn key_is_down(&self, code: Keycode) -> bool {
 		self.keys_down.contains(&code)
+	}
+
+	/// returns current x position of the mouse in pixel coordinates
+	///
+	/// In the p5.js API there are two state variables for this (mouseX and mouseY). If the mouse pointer is outside the sketch window, the function returns last position of the mouse inside the window(!)
+	pub fn mouse_pos(&self) -> (i32, i32) {
+		let mstate = MouseState::new(&self.event_pump);
+		(mstate.x(), mstate.y())
+	}
+
+	/// checks if any mouse button is currently pressed
+	pub fn mouse_is_pressed(&self) -> bool {
+		let mstate = MouseState::new(&self.event_pump);
+		mstate.pressed_mouse_buttons().count() > 0
 	}
 
 	/* draw settings */

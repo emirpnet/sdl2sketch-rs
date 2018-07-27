@@ -25,7 +25,7 @@ impl MainLoopMethods for MainState {
 		}
 
 		if s.key_is_down(Keycode::Num0) {
-			println!("Zero down.");
+			println!("Num0 down while mouse at {:?}", s.mouse_pos());
 		}
 	}
 
@@ -67,9 +67,26 @@ impl MainLoopMethods for MainState {
 
 	fn key_released(&mut self, _s: &mut Sketch, code: Keycode) {
 		match code {
-			Keycode::A => { println!("A release"); }
+			Keycode::A => { println!("A released"); }
 			_ => {}
 		}
+	}
+
+	/*
+	fn mouse_moved(&mut self, _s: &mut Sketch, x: i32, y: i32, xrel: i32, yrel: i32) {
+		println!("mouse_moved: ({},{}) -> ({},{})", xrel, yrel, x, y);
+	}
+	fn mouse_dragged(&mut self, _s: &mut Sketch, x: i32, y: i32, xrel: i32, yrel: i32) {
+		println!("mouse_dragged: ({},{}) -> ({},{})", xrel, yrel, x, y);
+	}
+	*/
+
+	fn mouse_pressed(&mut self, _s: &mut Sketch, button: MouseButton, x: i32, y: i32) {
+		println!("Mouse \"{:?}\" pressed at ({},{})", button, x, y);
+	}
+
+	fn mouse_released(&mut self, _s: &mut Sketch, button: MouseButton, x: i32, y: i32) {
+		println!("Mouse \"{:?}\" released at ({},{})", button, x, y);
 	}
 }
 
