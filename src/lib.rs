@@ -1,3 +1,4 @@
+extern crate num_traits;
 extern crate sdl2;
 extern crate sdl2_sys;
 

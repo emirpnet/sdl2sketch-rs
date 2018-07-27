@@ -2,6 +2,37 @@ extern crate sdl2sketch;
 use sdl2sketch::utils::*;
 
 #[test]
+fn test_constrain() {
+	assert_eq!(constrain(15, 10, 20), 15);
+	assert_eq!(constrain(9.9, 10.0, 20.0), 10.0);
+	assert_eq!(constrain(100, 10, 20), 20);
+}
+
+#[test]
+fn test_map() {
+	assert_eq!(map(1.0, 0.0, 10.0, 0.0, 100.0), 10.0);
+	assert_eq!(map(1.0, 0.0, 10.0, 100.0, 0.0), 90.0);
+	assert_eq!(map(1.0, 10.0, 0.0, 0.0, 100.0), 90.0);
+	assert_eq!(map(0.0, -1.0, 1.0, 0.0, 100.0), 50.0);
+	assert_eq!(map(0.0, -1.0, 1.0, 0.0, -100.0), -50.0);
+	assert_eq!(map(8.0, 0.0, 10.0, -10.0, 0.0), -2.0);
+	assert_eq!(map(8.0, 0.0, 10.0, 0.0, -10.0), -8.0);
+	assert_eq!(map(15.0, 0.0, 10.0, 0.0, 100.0), 150.0);
+	assert_eq!(map(-1.0, 0.0, 10.0, 0.0, 100.0), -10.0);
+}
+
+#[test]
+fn test_norm() {
+	assert_eq!(norm(11.0, 10.0, 20.0), 0.1);
+	assert_eq!(norm(10.0, 10.0, 20.0), 0.0);
+	assert_eq!(norm(20.0, 10.0, 20.0), 1.0);
+	assert_eq!(norm(-15.0, -20.0, -10.0), 0.5);
+	assert_eq!(norm(1.0, -5.0, 5.0), 0.6);
+	assert_eq!(norm(9.0, 10.0, 20.0), -0.1);
+	assert_eq!(norm(25.0, 10.0, 20.0), 1.5);
+}
+
+#[test]
 fn test_hsv_to_rgb() {
  	assert_eq!(hsv_to_rgb(  0, 0.0, 0.00), (  0,   0,   0)); // Black
  	assert_eq!(hsv_to_rgb(  0, 0.0, 1.00), (255, 255, 255)); // White

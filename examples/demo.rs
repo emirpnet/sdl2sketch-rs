@@ -91,7 +91,7 @@ impl MainLoopMethods for MainState {
 }
 
 fn main() {
-	let mut s = Sketch::new(640, 480, "Title");
+	let mut s = Sketch::new(640, 480, "SDL2Sketch Demo");
 	let mut m = MainState {
 		pos: (50, 50),
 		vel: (4, 2),

@@ -1,4 +1,28 @@
+extern crate num_traits;
+use num_traits::Float;
+
 const FTOL: f32 = 0.0001;
+
+/// utility function to constrain a value between low and high
+pub fn constrain<T: PartialOrd>(x: T, low: T, high: T) -> T {
+	if x < low  {
+		return low;
+	} else if x > high  {
+		return high;
+	} else {
+		return x;
+	}
+}
+
+/// utility function to map a Float from one value range to another
+pub fn map<T: Float>(x: T, x_min: T, x_max: T, out_min: T, out_max: T) -> T {
+	out_min + (out_max - out_min) * (x - x_min) / (x_max - x_min)
+}
+
+/// utility function to map a Float from one value range to [0,1]
+pub fn norm<T: Float>(x: T, x_min: T, x_max: T) -> T {
+	(x - x_min) / (x_max - x_min)
+}
 
 /// utility function to convert a HSV color value to RGB (EXPERIMENTAL)
 ///

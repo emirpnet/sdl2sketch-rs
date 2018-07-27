@@ -1,5 +1,4 @@
 extern crate sdl2sketch;
-extern crate mylib;
 extern crate rand;
 
 use sdl2sketch::*;

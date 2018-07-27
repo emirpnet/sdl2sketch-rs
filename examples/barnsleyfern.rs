@@ -1,9 +1,8 @@
 extern crate sdl2sketch;
 extern crate rand;
-extern crate mylib;
 
 use sdl2sketch::*;
-use mylib::useful::map;
+use sdl2sketch::utils::map;
 
 
 struct Point {

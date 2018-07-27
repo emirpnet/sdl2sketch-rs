@@ -5,13 +5,11 @@ authors = ["Jochen Peters <dev@emirp.net>"]
 
 [dependencies]
 rand = "0.3.14"
+num-traits = "0.2.5"
 sdl2-sys = "0.31.0"
 
 [dependencies.sdl2]
 version = "0.31.0"
 default-features = false
 features = ["gfx"]
-
-[dependencies.mylib]
-path = "../mylib"
 
