@@ -10,5 +10,5 @@ cargo run --release --example gameoflife
 ```
 
 ## Documentation
-The documentation of the API can be build by ```cargo doc``` or be found [here](https://emirpnet.github.io/rustdoc/sdl2sketch/).
+The documentation of the API can be built by ```cargo doc``` or be found [here](https://emirpnet.github.io/rustdoc/sdl2sketch/).
 
