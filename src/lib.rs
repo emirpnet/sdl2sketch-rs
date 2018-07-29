@@ -1,3 +1,5 @@
+//! SDL2Sketch tries to simplify the use of [rust-sdl2](https://github.com/Rust-SDL2/rust-sdl2) by following the style of the [p5.js](https://p5js.org) API. It does not try to be a complete game engine, but just wants to make it as easy as possible to create visual applications in Rust without much boilerplate code. Code examples and the source code of SDL2Sketch can be found on its [GitHub page](https://github.com/emirpnet/sdl2sketch).
+
 extern crate num_traits;
 extern crate sdl2;
 extern crate sdl2_sys;
@@ -68,7 +70,7 @@ fn handle_mouse_moved<T: MainLoopMethods>(s: &mut Sketch, m: &mut T, event: Even
 	}
 }
 
-/// This trait must be implemented by the state struct of the application which is provided to run().
+/// This trait must be implemented by the state struct of the application and provided to run().
 pub trait MainLoopMethods {
 
 	/// called once before entering the main loop
