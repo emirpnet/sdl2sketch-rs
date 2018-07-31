@@ -1,7 +1,7 @@
 # SDL2Sketch
 SDL2Sketch tries to simplify the use of [rust-sdl2](https://github.com/Rust-SDL2/rust-sdl2) by following the style of the [p5.js](https://p5js.org) API. It does not try to be a complete game engine, but just wants to make it as easy as possible to create visual applications in Rust without much boilerplate code.
 
-**The library is mostly still work in progress!**
+**The library is mostly still a work in progress!**
 
 ## Basic example
 The code for a simple bouncing ball looks like this. It can be run with ```cargo run --release --example basic_example```.

@@ -299,7 +299,7 @@ impl Sketch {
 	}
 
 	/// After calling this function the outline of drawn primitives will be in the width of the provided stroke weight in pixels (provided stroke() is set).
-	pub fn stroke_weight(&mut self, weight: u8) {
+	fn stroke_weight(&mut self, weight: u8) { // TODO: not public, because use of stroke_weight not implemented yet
 		self.stroke_weight = weight;
 	}
 
@@ -371,43 +371,39 @@ impl Sketch {
 		}
 	}
 
-	/// draws a polygon (EXPERIMENTAL)
+	/// draws a polygon
 	///
 	/// SDL2-gfx API, not p5.js
-	pub fn polygon(&mut self, vx32: &[i32], vy32: &[i32]) {
+	pub fn polygon(&mut self, vx: &[i32], vy: &[i32]) {
 
 		// check if coordinates slices are same length and > 0
-		if vx32.len() != vy32.len() {
-			eprintln!("Error drawing polygon: unequal number of coordinates ({}/{})", vx32.len(), vy32.len());
+		if vx.len() != vy.len() {
+			eprintln!("Error drawing polygon: unequal number of coordinates ({}/{})", vx.len(), vy.len());
 			return;
 		}
-		if vx32.len() == 0 {
-			eprintln!("Error drawing polygon: no coordinates provided");
+		if vx.len() < 2 {
+			eprintln!("Error drawing polygon: not enough coordinates provided");
 			return;
-		}
-		
-		// convert i32 to i16 (TODO: find a more efficient way)
-		let mut vx = Vec::new();
-		let mut vy = Vec::new();
-		for i in 0..vx32.len() {
-			//println!("{}: ({},{})", i, vx32[i], vy32[i]); // DEBUG
-			vx.push(vx32[i] as i16);
-			vy.push(vy32[i] as i16);
 		}
 
 		if let Some(c) = self.fill_color {
-			self.canvas.set_draw_color(c);
-			self.canvas.filled_polygon(&vx, &vy, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_polygon() failed. {}", e); } );
-			if self.smooth && self.stroke_color == None {
-				self.canvas.aa_polygon(&vx, &vy, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_polygon() failed. {}", e); } );
+			// convert i32 to i16 (TODO: find a more efficient way)
+			let mut vx16 = Vec::new();
+			let mut vy16 = Vec::new();
+			for i in 0..vx.len() {
+				vx16.push(vx[i] as i16);
+				vy16.push(vy[i] as i16);
+			}
+			// draw fill with SDL2-gfx filled_polygon()
+			self.canvas.filled_polygon(&vx16, &vy16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_polygon() failed. {}", e); } );
+			if self.smooth && self.stroke_color.is_none() {
+				self.canvas.aa_polygon(&vx16, &vy16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_polygon() failed. {}", e); } );
 			}
 		}
-		if let Some(c) = self.stroke_color {
-			self.canvas.set_draw_color(c);
-			if self.smooth {
-				self.canvas.aa_polygon(&vx, &vy, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_polygon() failed. {}", e); } );
-			} else {
-				self.canvas.polygon(&vx, &vy, c).unwrap_or_else( |e| { eprintln!("SDL-gfx polygon() failed. {}", e); } );
+
+		if let Some(_c) = self.stroke_color {
+			for i in 0..(vx.len()-1) {
+				self.line(vx[i], vy[i], vx[i+1], vy[i+1]); // This uses the own line() function instead of SDL2-gfx (aa-)polygon() because the latter always closes the outline and this is fewer lines of code. In tests there was no difference in performance.
 			}
 		}
 	}
@@ -415,14 +411,12 @@ impl Sketch {
 	/// draws a triangle
 	pub fn triangle(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32) {
 		if let Some(c) = self.fill_color {
-			self.canvas.set_draw_color(c);
 			self.canvas.filled_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_trigon() failed. {}", e); } );
-			if self.smooth && self.stroke_color == None {
+			if self.smooth && self.stroke_color.is_none() {
 				self.canvas.aa_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_trigon() failed. {}", e); } );
 			}
 		}
 		if let Some(c) = self.stroke_color {
-			self.canvas.set_draw_color(c);
 			if self.smooth {
 				self.canvas.aa_trigon(x1 as i16, y1 as i16, x2 as i16, y2 as i16, x3 as i16, y3 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_trigon() failed. {}", e); } );
 			} else {
@@ -431,37 +425,54 @@ impl Sketch {
 		}
 	}
 
-	/// draws a quad (NOT COMPLETE)
+	/// draws a quad
 	pub fn quad(&mut self, x1: i32, y1: i32, x2: i32, y2: i32, x3: i32, y3: i32, x4: i32, y4: i32) {
 		let vx = [x1, x2, x3, x4, x1];
 		let vy = [y1, y2, y3, y4, y1];
-		// TODO: coordinate sorting necessary here!
+		// Note that the first coordinate is added again at the end to close the shape.
 		self.polygon(&vx, &vy);
 	}
 
-	/// draws arc (NOT COMPLETE)
+	/// draws arc *(NOT COMPLETE)*
 	///
-	/// parameters are from SDL2-gfx API, not p5.js, (TODO)
-	/// which means this is a circle arc not an ellipse arc and
-	/// the start/end parameters are in DEG not RAD (TODO),
-	/// fill option not available (TODO)
+	/// zero for start/end angles is to the right (not on top)
+	///
+	/// ## TODO:
+	/// * this is a circle arc not an ellipse arc (parameters are from SDL2-gfx API, not p5.js)
+	/// * fill option not available
+	/// * start/end parameters are in DEG not RAD
 	pub fn arc(&mut self, x: i32, y: i32, r: u32, start: i32, end: i32) {
 		if let Some(c) = self.stroke_color {
 			self.canvas.arc(x as i16, y as i16, r as i16, start as i16, end as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx arc() failed. {}", e); } );
 		}
 	}
 
+	/// draws a pie *(NOT COMPLETE)*
+	///
+	/// SDL2-gfx API, not p5.js,
+	/// zero for start/end angles is to the right (not on top),
+	/// there is no smooth option (ignores setting)
+	///
+	/// ## TODO:
+	/// * start/end parameters are in DEG not RAD
+	pub fn pie(&mut self, x: i32, y: i32, r: u32, start: i32, end: i32) {
+		if let Some(c) = self.fill_color {
+			self.canvas.filled_pie(x as i16, y as i16, r as i16, start as i16, end as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_pie() failed. {}", e); } );
+		}
+		if let Some(c) = self.stroke_color {
+			self.canvas.pie(x as i16, y as i16, r as i16, start as i16, end as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx pie() failed. {}", e); } );
+		}
+	}
+
 	/// draws a circle
 	pub fn circle(&mut self, x: i32, y: i32, r: u32) {
 		if let Some(c) = self.fill_color {
-			self.canvas.set_draw_color(c);
 			self.canvas.filled_circle(x as i16, y as i16, r as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_circle() failed. {}", e); } );
-			if self.smooth && self.stroke_color == None {
+			if self.smooth && self.stroke_color.is_none() {
 				self.canvas.aa_circle(x as i16, y as i16, r as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_circle() failed. {}", e); } );
 			}
 		}
 		if let Some(c) = self.stroke_color {
-			self.canvas.set_draw_color(c);
 			if self.smooth {
 				self.canvas.aa_circle(x as i16, y as i16, r as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_circle() failed. {}", e); } );
 			} else {
@@ -473,14 +484,12 @@ impl Sketch {
 	/// draws an ellipse
 	pub fn ellipse(&mut self, x: i32, y: i32, w: u32, h: u32) {
 		if let Some(c) = self.fill_color {
-			self.canvas.set_draw_color(c);
 			self.canvas.filled_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_ellipse() failed. {}", e); } );
-			if self.smooth && self.stroke_color == None {
+			if self.smooth && self.stroke_color.is_none() {
 				self.canvas.aa_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_ellipse() failed. {}", e); } );
 			}
 		}
 		if let Some(c) = self.stroke_color {
-			self.canvas.set_draw_color(c);
 			if self.smooth {
 				self.canvas.aa_ellipse(x as i16, y as i16, w as i16, h as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_ellipse() failed. {}", e); } );
 			} else {
