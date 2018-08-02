@@ -127,6 +127,7 @@ pub struct Sketch {
 	stroke_weight: u8,
 	smooth: bool,
 	rect_mode: RectMode,
+	image_mode: ImageMode,
 	canvas: Canvas<sdl2::video::Window>,
 	event_pump: EventPump,
 	_image_context: Sdl2ImageContext,
@@ -155,6 +156,7 @@ impl Sketch {
 			stroke_weight: 1,
 			smooth: true,
 			rect_mode: RectMode::CORNER,
+			image_mode: ImageMode::CORNER,
 			canvas,
 			event_pump,
 			_image_context: image_context,
@@ -285,6 +287,11 @@ impl Sketch {
 		self.rect_mode = mode;
 	}
 
+	/// After calling this function the parameters of all subsequent calls to image() will be interpreted according to the provided mode.
+	pub fn image_mode(&mut self, mode: ImageMode) {
+		self.image_mode = mode;
+	}
+
 	/* draw primitives */
 
 	// TODO:
@@ -302,7 +309,7 @@ impl Sketch {
 	/// draws a rectangle
 	pub fn rect(&mut self, x: i32, y: i32, w: u32, h: u32) { // TODO: u32 for w and h is a problem when in RectMode::CORNERS!
 
-		let (x, y, w, h) = self.rect_parameters(x, y, w, h);
+		let (x, y, w, h) = self.rect_args(x, y, w, h);
 
 		if let Some(c) = self.fill_color {
 			self.canvas.set_draw_color(c);
@@ -316,7 +323,7 @@ impl Sketch {
 	}
 
 	/// converts parameters for rect() accroding to setting of rect_mode
-	fn rect_parameters(&mut self, x: i32, y: i32, w: u32, h: u32) -> (i32, i32, u32, u32) {
+	fn rect_args(&mut self, x: i32, y: i32, w: u32, h: u32) -> (i32, i32, u32, u32) {
 		match self.rect_mode {
 			RectMode::CORNER  => (x, y, w, h),
 			RectMode::CORNERS => (x, y, (w as i32 - x).abs() as u32, (h as i32 - y).abs() as u32), // TODO: What happens with negative and mixed up coordinates?
@@ -464,24 +471,14 @@ impl Sketch {
 			}
 		}
 	}
+
+	/* draw images */
 	
 	/// displays an image at the given position (x,y) and size (w,h)
 	///
 	/// If w and/or h is 0 the original image width and/or height is used.
 	pub fn image(&mut self, img: &Image, x: i32, y: i32, w: u32, h: u32) {
-		// handle w and h argument
-		let width;
-		let height;
-		if w == 0 {
-			width = img.width();
-		} else {
-			width = w;
-		}
-		if h == 0 {
-			height = img.height();
-		} else {
-			height = h;
-		}
+		let (x, y, w, h) = self.image_args(img, x, y, w, h);
 
 		// convert Surface to Texture
 		// TODO: check if this is a performance issue
@@ -492,13 +489,39 @@ impl Sketch {
 		};
 
 		// draw on canvas
-		let rect = sdl2::rect::Rect::new(x, y, width, height);
+		let rect = sdl2::rect::Rect::new(x, y, w, h);
 		self.canvas.copy(&tex, None, rect).unwrap_or_else( |e| { eprintln!("Drawing of image failed. {}", e); } );
+	}
+
+	/// converts parameters for rect() accroding to setting of rect_mode
+	fn image_args(&mut self, img: &Image, x: i32, y: i32, width: u32, height: u32) -> (i32, i32, u32, u32) {
+		
+		// handle w and/or h == 0
+		let w;
+		let h;
+		if width == 0 && (self.image_mode == ImageMode::CORNER || self.image_mode == ImageMode::CENTER) {
+			w = img.width();
+		} else {
+			w = width;
+		}
+		if height == 0 && (self.image_mode == ImageMode::CORNER || self.image_mode == ImageMode::CENTER) {
+			h = img.height();
+		} else {
+			h = height;
+		}
+		
+		// handle image mode
+		match self.image_mode {
+			ImageMode::CORNER  => (x, y, w, h),
+			ImageMode::CORNERS => (x, y, (w as i32 - x).abs() as u32, (h as i32 - y).abs() as u32), // TODO: What happens with negative and mixed up coordinates?
+			ImageMode::CENTER  => ((x as f32 - 0.5*w as f32) as i32, (y as f32 - 0.5*h as f32) as i32, w, h),
+		}
 	}
 }
 
 
 /// options for the interpretation of the parameters given to rect()
+#[derive(PartialEq)]
 pub enum RectMode {
 	/// CORNER (default): Coordinates of the upper left corner (x, y), width (w) and height (h)
 	CORNER,
@@ -508,6 +531,17 @@ pub enum RectMode {
 	CENTER,
 	/// RADIUS: Coordinates of the center (x, y), half width (w) and half height (h)
 	RADIUS,
+}
+
+/// options for the interpretation of the parameters given to rect()
+#[derive(PartialEq)]
+pub enum ImageMode {
+	/// CORNER (default): Coordinates of the upper left corner (x, y), width (w) and height (h)
+	CORNER,
+	/// CORNERS: Coordinates of the upper left corner (x, y) and the lower right corner (w, h)
+	CORNERS,
+	/// CENTER: Coordinates of the center (x, y), width (w) and height (h)
+	CENTER,
 }
 
 
