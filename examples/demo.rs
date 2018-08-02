@@ -2,25 +2,26 @@ extern crate sdl2sketch;
 use sdl2sketch::*;
 
 
-struct MainState {
+struct MainState<'a> {
+	img: Surface<'a>,
 	pos: (i32, i32),
 	vel: (i32, i32),
-	size: i32,
+	size: (i32, i32),
 }
 
-impl MainLoopMethods for MainState {
+impl<'a> MainLoopMethods for MainState<'a> {
 	fn setup(&mut self, s: &mut Sketch) {
-		s.set_framerate(30);
+		s.set_framerate(60);
 		//s.no_smooth();
 	}
 
 	fn update(&mut self, s: &mut Sketch) {
 		self.pos.0 += self.vel.0;
 		self.pos.1 += self.vel.1;
-		if self.pos.0 - self.size <= 0 || self.pos.0 + self.size >= s.width() {
+		if self.pos.0 <= 0 || self.pos.0 + self.size.0 >= s.width() {
 			self.vel.0 *= -1;
 		}
-		if self.pos.1 - self.size <= 0 || self.pos.1 + self.size >= s.height() {
+		if self.pos.1 <= 0 || self.pos.1 + self.size.1 >= s.height() {
 			self.vel.1 *= -1;
 		}
 
@@ -34,6 +35,7 @@ impl MainLoopMethods for MainState {
 
 		s.stroke(Color::RGB(255, 255, 255));
 		s.line(10, 10, 630, 470);
+
 
 		s.stroke(Color::RGB(0, 0, 255));
 		s.fill(Color::RGB(0, 255, 255));
@@ -62,7 +64,9 @@ impl MainLoopMethods for MainState {
 
 		s.no_stroke();
 		s.fill(Color::RGB(255, 0, 0));
-		s.circle(self.pos.0, self.pos.1, self.size as u32);
+		s.circle(70, 140, 30);
+
+		s.image(&self.img, self.pos.0, self.pos.1, 0, 0);
 	}
 
 	fn key_released(&mut self, _s: &mut Sketch, code: Keycode) {
@@ -93,9 +97,10 @@ impl MainLoopMethods for MainState {
 fn main() {
 	let mut s = Sketch::new(640, 480, "SDL2Sketch Demo");
 	let mut m = MainState {
-		pos: (50, 50),
+		img: load_image(std::path::Path::new("examples/pixelcar_64x40.png")),
+		pos: (20, 20),
 		vel: (4, 2),
-		size: 15,
+		size: (64, 40),
 	};
 	sdl2sketch::run(&mut s, &mut m);
 }

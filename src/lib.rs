@@ -6,18 +6,21 @@ extern crate sdl2_sys;
 
 use std::{env, thread, time};
 use std::collections::HashSet;
-use sdl2::render::Canvas;
+use std::path::Path;
+use sdl2::render::{Canvas, Texture, TextureCreator};
 use sdl2::EventPump;
 use sdl2::event::Event;
 use sdl2::mouse::MouseState;
+use sdl2_sys::SDL_GetTicks;
 use sdl2::gfx::framerate::FPSManager;
 use sdl2::gfx::primitives::DrawRenderer;
-use sdl2_sys::SDL_GetTicks;
+use sdl2::image::{Sdl2ImageContext, LoadSurface, LoadTexture};
 
 // re-exports
 #[doc(no_inline)] pub use sdl2::pixels::Color;
 #[doc(no_inline)] pub use sdl2::keyboard::Keycode;
 #[doc(no_inline)] pub use sdl2::mouse::MouseButton;
+#[doc(no_inline)] pub use sdl2::surface::Surface;
 
 /// module containing utility functions
 pub mod utils;
@@ -172,6 +175,9 @@ pub struct Sketch {
 	rect_mode: RectMode,
 	canvas: Canvas<sdl2::video::Window>,
 	event_pump: EventPump,
+	_image_context: Sdl2ImageContext,
+	texture_creator: TextureCreator<sdl2::video::WindowContext>,
+	//textures: Vec<Box<Texture>>,
 	fps_manager: FPSManager,
 	fps_data: FPSData,
 	keys_down: HashSet<Keycode>,
@@ -184,7 +190,8 @@ impl Sketch {
 
 	/// create a new sketch
 	pub fn new(width: u32, height: u32, title: &str) -> Self {
-		let (canvas, event_pump) = init_sdl_subsystems(width, height, title);
+		let (canvas, event_pump, image_context) = init_sdl_subsystems(width, height, title);
+		let texture_creator = canvas.texture_creator();
 		Sketch {
 			running: false,
 			no_loop: false,
@@ -197,6 +204,9 @@ impl Sketch {
 			rect_mode: RectMode::CORNER,
 			canvas,
 			event_pump,
+			_image_context: image_context,
+			texture_creator,
+			//textures: Vec::new(),
 			fps_manager: FPSManager::new(),
 			fps_data: FPSData::new(1000), // parameter sets update interval in ms
 			keys_down: HashSet::with_capacity(12),
@@ -214,11 +224,16 @@ impl Sketch {
 	}
 	
 	/// returns the current framerate in frames per second
+	///
+	/// In the p5.js API there is one function as getter and setter, framerate(), which has an optional argument.
 	pub fn get_framerate(&mut self) -> f32 {
 		self.fps_data.current_fps
 	}
 
 	/// sets the max. framerate in frames per second
+	///
+	/// max. setting 200 fps; 
+	/// In the p5.js API there is one function as getter and setter, framerate(), which has an optional argument.
 	pub fn set_framerate(&mut self, fps: u32) {
 		self.fps_manager.set_framerate(fps).unwrap_or_else( |e| { eprintln!("SDL2-gfx set_framerate() failed. {}", e); } );
 	}
@@ -498,11 +513,78 @@ impl Sketch {
 		}
 	}
 	
+	/// displays an image at the given position (x,y) and size (w,h)
+	///
+	/// If w and/or h is 0 the original image width and/or height is used.
+	/// ## TODO:
+	/// * decide if image display is better handled by Surface or Texture
+	pub fn image(&mut self, img: &Surface, x: i32, y: i32, w: u32, h: u32) {
+		let tex = self.texture_creator.create_texture_from_surface(img).unwrap(); // TODO: remove unwrap()
+		let (width, height) = Sketch::handle_image_w_h_arguments(&tex, w, h);
+		let rect = sdl2::rect::Rect::new(x, y, width, height);
+		self.canvas.copy(&tex, None, rect).unwrap_or_else( |e| { eprintln!("Displaying image failed. {}", e); } );
+	}
+
+	/// displays a texture at the given position (x,y) and size (w,h)
+	///
+	/// If w and/or h is 0 the original image width and/or height is used.
+	/// ## TODO:
+	/// * decide if image display is better handled by Surface or Texture
+	pub fn texture(&mut self, tex: &Texture, x: i32, y: i32, w: u32, h: u32) {
+		let (width, height) = Sketch::handle_image_w_h_arguments(tex, w, h);
+		let rect = sdl2::rect::Rect::new(x, y, width, height);
+		self.canvas.copy(&tex, None, rect).unwrap_or_else( |e| { eprintln!("Display of texture failed. {}", e); } );
+	}
+
+	fn handle_image_w_h_arguments(tex: &Texture, w: u32, h: u32) -> (u32, u32) {
+		if w != 0 && h != 0 {
+			return (w, h); // avoids call to Texture::query()
+		}
+
+		let width;
+		let height;
+		let query = tex.query();
+
+		if w == 0 {
+			width = query.width;
+		} else {
+			width = w;
+		}
+		
+		if h == 0 {
+			height = query.height;
+		} else {
+			height = h;
+		}
+
+		(width, height)
+	}
+
+	/*
+	/// loads an image from file to a Texture (PNG or JPG)
+	///
+	/// ## TODO:
+	/// * decide if image display is better handled by Surface or Texture
+	pub fn load_texture(&mut self, filename: &Path) -> &Texture {
+		let tex = self.texture_creator.load_texture(filename).expect("Error loading texture. Abort.");
+		self.textures.push(Box::new(tex));
+		&self.textures.last().unwrap()
+	}
+	*/
+}
+
+
+/// loads an image from file to a Surface (PNG or JPG)
+///
+/// ## TODO:
+/// * decide if image display is better handled by Surface or Texture
+pub fn load_image(filename: &Path) -> Surface {
+	Surface::from_file(filename).expect("Error loading image. Abort.")
 }
 
 
 /// initializes the necessary SDL2 subsystems and returns a SDL2 window/renderer and event pump
-fn init_sdl_subsystems(width: u32, height: u32, title: &str) -> (Canvas<sdl2::video::Window>, EventPump) {
+fn init_sdl_subsystems(width: u32, height: u32, title: &str) -> (Canvas<sdl2::video::Window>, EventPump, Sdl2ImageContext) {
 	let sdl_context = sdl2::init().expect("SDL2 init() failed. Abort.");
 	let video_subsystem = sdl_context.video().expect("Initialization of SDL2 video subsystem failed. Abort.");
 	let window = video_subsystem.window(title, width, height)
@@ -513,6 +595,7 @@ fn init_sdl_subsystems(width: u32, height: u32, title: &str) -> (Canvas<sdl2::vi
 		.accelerated()
 		.build().expect("Initialization of SDL2 canvas failed. Abort.");
 	let event_pump = sdl_context.event_pump().expect("Initialization of SDL2 event pump failed. Abort.");
-	(canvas, event_pump)
+	let image_context = sdl2::image::init(sdl2::image::INIT_PNG | sdl2::image::INIT_JPG).expect("Initialization of SDL2-image failed. Abort.");
+	(canvas, event_pump, image_context)
 }
 
