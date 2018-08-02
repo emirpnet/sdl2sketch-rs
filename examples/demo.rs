@@ -1,9 +1,8 @@
 extern crate sdl2sketch;
 use sdl2sketch::*;
 
-
 struct MainState<'a> {
-	img: Surface<'a>,
+	img: Image<'a>,
 	pos: (i32, i32),
 	vel: (i32, i32),
 	size: (i32, i32),
@@ -35,7 +34,6 @@ impl<'a> MainLoopMethods for MainState<'a> {
 
 		s.stroke(Color::RGB(255, 255, 255));
 		s.line(10, 10, 630, 470);
-
 
 		s.stroke(Color::RGB(0, 0, 255));
 		s.fill(Color::RGB(0, 255, 255));

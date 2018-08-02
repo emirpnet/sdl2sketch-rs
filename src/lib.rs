@@ -7,20 +7,21 @@ extern crate sdl2_sys;
 use std::{env, thread, time};
 use std::collections::HashSet;
 use std::path::Path;
-use sdl2::render::{Canvas, Texture, TextureCreator};
+use sdl2::render::{Canvas, TextureCreator};
 use sdl2::EventPump;
 use sdl2::event::Event;
 use sdl2::mouse::MouseState;
 use sdl2_sys::SDL_GetTicks;
 use sdl2::gfx::framerate::FPSManager;
 use sdl2::gfx::primitives::DrawRenderer;
-use sdl2::image::{Sdl2ImageContext, LoadSurface, LoadTexture};
+use sdl2::image::{Sdl2ImageContext, LoadSurface};
+use sdl2::surface::Surface;
 
 // re-exports
 #[doc(no_inline)] pub use sdl2::pixels::Color;
 #[doc(no_inline)] pub use sdl2::keyboard::Keycode;
 #[doc(no_inline)] pub use sdl2::mouse::MouseButton;
-#[doc(no_inline)] pub use sdl2::surface::Surface;
+#[doc(no_inline)] pub use sdl2::surface::Surface as Image; // "Surface as Image" is good enough for now.
 
 /// module containing utility functions
 pub mod utils;
@@ -73,6 +74,7 @@ fn handle_mouse_moved<T: MainLoopMethods>(s: &mut Sketch, m: &mut T, event: Even
 	}
 }
 
+
 /// This trait must be implemented by the state struct of the application and provided to run().
 pub trait MainLoopMethods {
 
@@ -113,54 +115,6 @@ pub trait MainLoopMethods {
 	fn mouse_released(&mut self, _s: &mut Sketch, _button: MouseButton, _x: i32, _y: i32) {}
 }
 
-/// options for the interpretation of the parameters given to rect()
-pub enum RectMode {
-	/// CORNER (default): Coordinates of the upper left corner (x, y), width (w) and height (h)
-	CORNER,
-	/// CORNERS: Coordinates of the upper left corner (x, y) and the lower right corner (w, h)
-	CORNERS,
-	/// CENTER: Coordinates of the center (x, y), width (w) and height (h)
-	CENTER,
-	/// RADIUS: Coordinates of the center (x, y), half width (w) and half height (h)
-	RADIUS,
-}
-
-/// This struct collects framerate data and calculates the current fps.
-struct FPSData {
-	update_interval: u32, // in ms
-	print_fps: bool,
-	current_fps: f32,
-	last_update: u32,
-	num_frames: u32,
-}
-
-impl FPSData {
-	fn new(update_interval: u32) -> Self {
-		FPSData {
-			update_interval,
-			print_fps: env::var("SDL2SKETCH_PRINTFPS").is_ok(),
-			current_fps: 0.0,
-			last_update: unsafe { SDL_GetTicks() },
-			num_frames: 0,
-		}
-	}
-
-	fn update(&mut self) {
-		let now = unsafe { SDL_GetTicks() };
-		let time_diff = now - self.last_update;
-		if time_diff > self.update_interval {
-			self.current_fps = (self.num_frames as f32 / time_diff as f32) * 1000.0;
-			self.last_update = now;
-			self.num_frames = 0;
-			if self.print_fps {
-				println!("FPS: {:.2}", self.current_fps);
-			}
-		} else {
-			self.num_frames += 1;
-		}
-	}
-}
-
 
 /// This struct contains the necessary SDL2 subsystem objects and provides most of the API.
 pub struct Sketch {
@@ -177,7 +131,6 @@ pub struct Sketch {
 	event_pump: EventPump,
 	_image_context: Sdl2ImageContext,
 	texture_creator: TextureCreator<sdl2::video::WindowContext>,
-	//textures: Vec<Box<Texture>>,
 	fps_manager: FPSManager,
 	fps_data: FPSData,
 	keys_down: HashSet<Keycode>,
@@ -206,7 +159,6 @@ impl Sketch {
 			event_pump,
 			_image_context: image_context,
 			texture_creator,
-			//textures: Vec::new(),
 			fps_manager: FPSManager::new(),
 			fps_data: FPSData::new(1000), // parameter sets update interval in ms
 			keys_down: HashSet::with_capacity(12),
@@ -516,72 +468,53 @@ impl Sketch {
 	/// displays an image at the given position (x,y) and size (w,h)
 	///
 	/// If w and/or h is 0 the original image width and/or height is used.
-	/// ## TODO:
-	/// * decide if image display is better handled by Surface or Texture
-	pub fn image(&mut self, img: &Surface, x: i32, y: i32, w: u32, h: u32) {
-		let tex = self.texture_creator.create_texture_from_surface(img).unwrap(); // TODO: remove unwrap()
-		let (width, height) = Sketch::handle_image_w_h_arguments(&tex, w, h);
-		let rect = sdl2::rect::Rect::new(x, y, width, height);
-		self.canvas.copy(&tex, None, rect).unwrap_or_else( |e| { eprintln!("Displaying image failed. {}", e); } );
-	}
-
-	/// displays a texture at the given position (x,y) and size (w,h)
-	///
-	/// If w and/or h is 0 the original image width and/or height is used.
-	/// ## TODO:
-	/// * decide if image display is better handled by Surface or Texture
-	pub fn texture(&mut self, tex: &Texture, x: i32, y: i32, w: u32, h: u32) {
-		let (width, height) = Sketch::handle_image_w_h_arguments(tex, w, h);
-		let rect = sdl2::rect::Rect::new(x, y, width, height);
-		self.canvas.copy(&tex, None, rect).unwrap_or_else( |e| { eprintln!("Display of texture failed. {}", e); } );
-	}
-
-	fn handle_image_w_h_arguments(tex: &Texture, w: u32, h: u32) -> (u32, u32) {
-		if w != 0 && h != 0 {
-			return (w, h); // avoids call to Texture::query()
-		}
-
+	pub fn image(&mut self, img: &Image, x: i32, y: i32, w: u32, h: u32) {
+		// handle w and h argument
 		let width;
 		let height;
-		let query = tex.query();
-
 		if w == 0 {
-			width = query.width;
+			width = img.width();
 		} else {
 			width = w;
 		}
-		
 		if h == 0 {
-			height = query.height;
+			height = img.height();
 		} else {
 			height = h;
 		}
 
-		(width, height)
-	}
+		// convert Surface to Texture
+		// TODO: check if this is a performance issue
+		let tex = self.texture_creator.create_texture_from_surface(img);
+		let tex = match tex {
+			Ok(t) => t,
+			Err(e) => { eprintln!("Drawing of image failed. {}", e); return; }
+		};
 
-	/*
-	/// loads an image from file to a Texture (PNG or JPG)
-	///
-	/// ## TODO:
-	/// * decide if image display is better handled by Surface or Texture
-	pub fn load_texture(&mut self, filename: &Path) -> &Texture {
-		let tex = self.texture_creator.load_texture(filename).expect("Error loading texture. Abort.");
-		self.textures.push(Box::new(tex));
-		&self.textures.last().unwrap()
+		// draw on canvas
+		let rect = sdl2::rect::Rect::new(x, y, width, height);
+		self.canvas.copy(&tex, None, rect).unwrap_or_else( |e| { eprintln!("Drawing of image failed. {}", e); } );
 	}
-	*/
 }
 
 
-/// loads an image from file to a Surface (PNG or JPG)
-///
-/// ## TODO:
-/// * decide if image display is better handled by Surface or Texture
-pub fn load_image(filename: &Path) -> Surface {
+/// options for the interpretation of the parameters given to rect()
+pub enum RectMode {
+	/// CORNER (default): Coordinates of the upper left corner (x, y), width (w) and height (h)
+	CORNER,
+	/// CORNERS: Coordinates of the upper left corner (x, y) and the lower right corner (w, h)
+	CORNERS,
+	/// CENTER: Coordinates of the center (x, y), width (w) and height (h)
+	CENTER,
+	/// RADIUS: Coordinates of the center (x, y), half width (w) and half height (h)
+	RADIUS,
+}
+
+
+/// loads an image from file (PNG or JPG)
+pub fn load_image(filename: &Path) -> Image { // TODO: Why does this not compile as a (not static) method of Sketch?
 	Surface::from_file(filename).expect("Error loading image. Abort.")
 }
-
 
 /// initializes the necessary SDL2 subsystems and returns a SDL2 window/renderer and event pump
 fn init_sdl_subsystems(width: u32, height: u32, title: &str) -> (Canvas<sdl2::video::Window>, EventPump, Sdl2ImageContext) {
@@ -597,5 +530,42 @@ fn init_sdl_subsystems(width: u32, height: u32, title: &str) -> (Canvas<sdl2::vi
 	let event_pump = sdl_context.event_pump().expect("Initialization of SDL2 event pump failed. Abort.");
 	let image_context = sdl2::image::init(sdl2::image::INIT_PNG | sdl2::image::INIT_JPG).expect("Initialization of SDL2-image failed. Abort.");
 	(canvas, event_pump, image_context)
+}
+
+
+/// This struct collects framerate data and calculates the current fps.
+struct FPSData {
+	update_interval: u32, // in ms
+	print_fps: bool,
+	current_fps: f32,
+	last_update: u32,
+	num_frames: u32,
+}
+
+impl FPSData {
+	fn new(update_interval: u32) -> Self {
+		FPSData {
+			update_interval,
+			print_fps: env::var("SDL2SKETCH_PRINTFPS").is_ok(),
+			current_fps: 0.0,
+			last_update: unsafe { SDL_GetTicks() },
+			num_frames: 0,
+		}
+	}
+
+	fn update(&mut self) {
+		let now = unsafe { SDL_GetTicks() };
+		let time_diff = now - self.last_update;
+		if time_diff > self.update_interval {
+			self.current_fps = (self.num_frames as f32 / time_diff as f32) * 1000.0;
+			self.last_update = now;
+			self.num_frames = 0;
+			if self.print_fps {
+				println!("FPS: {:.2}", self.current_fps);
+			}
+		} else {
+			self.num_frames += 1;
+		}
+	}
 }
 
