@@ -1,6 +1,8 @@
 extern crate sdl2sketch;
 use sdl2sketch::utils::*;
 
+use std::f32::consts::PI;
+
 #[test]
 fn test_constrain() {
 	assert_eq!(constrain(15, 10, 20), 15);
@@ -30,6 +32,22 @@ fn test_norm() {
 	assert_eq!(norm(1.0, -5.0, 5.0), 0.6);
 	assert_eq!(norm(9.0, 10.0, 20.0), -0.1);
 	assert_eq!(norm(25.0, 10.0, 20.0), 1.5);
+}
+
+#[test]
+fn test_rad_to_deg() {
+	assert_eq!(rad_to_deg(0.0), 0.0);
+	assert_eq!(rad_to_deg(PI/2.0), 90.0);
+	assert_eq!(rad_to_deg(PI), 180.0);
+	assert_eq!(rad_to_deg(3.0*PI/2.0), 270.0);
+}
+
+#[test]
+fn test_deg_to_rad() {
+	assert_eq!(deg_to_rad(0.0), 0.0);
+	assert_eq!(deg_to_rad(90.0), PI/2.0);
+	assert_eq!(deg_to_rad(180.0), PI);
+	assert_eq!(deg_to_rad(270.0), 3.0*PI/2.0);
 }
 
 #[test]

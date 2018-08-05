@@ -54,7 +54,13 @@ impl<'a> MainLoopMethods for MainState<'a> {
 
 		s.stroke(Color::RGB(255, 0, 255));
 		s.no_fill();
-		s.arc(150, 240, 40, 0, 270);
+		s.angle_mode(AngleMode::DEGREES);
+		s.arc(150, 240, 40, 0.0, 270.0);
+
+		s.stroke(Color::RGB(0, 0, 255));
+		s.fill(Color::RGB(0, 160, 0));
+		s.angle_mode(AngleMode::RADIANS);
+		s.pie(320, 380, 35, 0.0, 5.0);
 
 		s.stroke(Color::RGB(0, 0, 255));
 		s.fill(Color::RGB(255, 255, 0));

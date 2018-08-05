@@ -1,6 +1,7 @@
 extern crate num_traits;
 use num_traits::Float;
 
+use std::f32::consts::PI;
 const FTOL: f32 = 0.0001;
 
 /// utility function to constrain a value between low and high
@@ -22,6 +23,16 @@ pub fn map<T: Float>(x: T, x_min: T, x_max: T, out_min: T, out_max: T) -> T {
 /// utility function to map a Float from one value range to [0,1]
 pub fn norm<T: Float>(x: T, x_min: T, x_max: T) -> T {
 	(x - x_min) / (x_max - x_min)
+}
+
+/// utility function to convert angles from radians to degrees
+pub fn rad_to_deg(rad: f32) -> f32 {
+	180.0 * rad / PI
+}
+
+/// utility function to convert angles from degrees to radians
+pub fn deg_to_rad(deg: f32) -> f32 {
+	PI * deg / 180.0
 }
 
 /// utility function to convert a HSV color value to RGB (EXPERIMENTAL)

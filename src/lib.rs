@@ -126,6 +126,7 @@ pub struct Sketch {
 	stroke_color: Option<Color>,
 	stroke_weight: u8,
 	smooth: bool,
+	angle_mode: AngleMode,
 	rect_mode: RectMode,
 	image_mode: ImageMode,
 	canvas: Canvas<sdl2::video::Window>,
@@ -155,6 +156,7 @@ impl Sketch {
 			stroke_color: Some(Color::RGB(255, 255, 255)),
 			stroke_weight: 1,
 			smooth: true,
+			angle_mode: AngleMode::RADIANS,
 			rect_mode: RectMode::CORNER,
 			image_mode: ImageMode::CORNER,
 			canvas,
@@ -280,6 +282,11 @@ impl Sketch {
 	/// After calling this function primitives will be drawn without anti-aliasing. (rugged outline but faster)
 	pub fn no_smooth(&mut self) {
 		self.smooth = false;
+	}
+
+	/// After calling this function angle parameters of all subsequent function calls will be interpreted according to the provided mode.
+	pub fn angle_mode(&mut self, mode: AngleMode) {
+		self.angle_mode = mode;
 	}
 
 	/// After calling this function the parameters of all subsequent calls to rect() will be interpreted according to the provided mode.
@@ -414,27 +421,28 @@ impl Sketch {
 	/// ## TODO:
 	/// * this is a circle arc not an ellipse arc (parameters are from SDL2-gfx API, not p5.js)
 	/// * fill option not available
-	/// * start/end parameters are in DEG not RAD
-	pub fn arc(&mut self, x: i32, y: i32, r: u32, start: i32, end: i32) {
+	pub fn arc(&mut self, x: i32, y: i32, r: u32, start: f32, end: f32) {
+		let start = self.angle_arg(start);
+		let end = self.angle_arg(end);
 		if let Some(c) = self.stroke_color {
 			self.canvas.arc(x as i16, y as i16, r as i16, start as i16, end as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx arc() failed. {}", e); } );
 		}
 	}
 
-	/// draws a pie *(NOT COMPLETE)*
+	/// draws a pie
 	///
-	/// SDL2-gfx API, not p5.js,
 	/// zero for start/end angles is to the right (not on top),
 	/// there is no smooth option (ignores setting)
 	///
-	/// ## TODO:
-	/// * start/end parameters are in DEG not RAD
-	pub fn pie(&mut self, x: i32, y: i32, r: u32, start: i32, end: i32) {
+	/// (SDL2-gfx API, not p5.js)
+	pub fn pie(&mut self, x: i32, y: i32, r: u32, start: f32, end: f32) {
+		let start = self.angle_arg(start).round() as i16;
+		let end = self.angle_arg(end).round() as i16;
 		if let Some(c) = self.fill_color {
-			self.canvas.filled_pie(x as i16, y as i16, r as i16, start as i16, end as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_pie() failed. {}", e); } );
+			self.canvas.filled_pie(x as i16, y as i16, r as i16, start, end, c).unwrap_or_else( |e| { eprintln!("SDL-gfx filled_pie() failed. {}", e); } );
 		}
 		if let Some(c) = self.stroke_color {
-			self.canvas.pie(x as i16, y as i16, r as i16, start as i16, end as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx pie() failed. {}", e); } );
+			self.canvas.pie(x as i16, y as i16, r as i16, start, end, c).unwrap_or_else( |e| { eprintln!("SDL-gfx pie() failed. {}", e); } );
 		}
 	}
 
@@ -517,30 +525,47 @@ impl Sketch {
 			ImageMode::CENTER  => ((x as f32 - 0.5*w as f32) as i32, (y as f32 - 0.5*h as f32) as i32, w, h),
 		}
 	}
+
+	/// converts radians to degrees if AngleMode is set accordingly
+	fn angle_arg(&self, a: f32) -> f32 {
+		match self.angle_mode {
+			AngleMode::RADIANS => utils::rad_to_deg(a),
+			AngleMode::DEGREES => a,
+		}
+	}
 }
 
+
+/// options for the interpretation of angle parameters
+#[derive(PartialEq)]
+pub enum AngleMode {
+	/// RADIANS (default): angles are interpreted as radians
+	RADIANS,
+	/// DEGREES: angles are interpreted as degrees
+	DEGREES,
+}
 
 /// options for the interpretation of the parameters given to rect()
 #[derive(PartialEq)]
 pub enum RectMode {
-	/// CORNER (default): Coordinates of the upper left corner (x, y), width (w) and height (h)
+	/// CORNER (default): coordinates of the upper left corner (x, y), width (w) and height (h)
 	CORNER,
-	/// CORNERS: Coordinates of the upper left corner (x, y) and the lower right corner (w, h)
+	/// CORNERS: coordinates of the upper left corner (x, y) and the lower right corner (w, h)
 	CORNERS,
-	/// CENTER: Coordinates of the center (x, y), width (w) and height (h)
+	/// CENTER: coordinates of the center (x, y), width (w) and height (h)
 	CENTER,
-	/// RADIUS: Coordinates of the center (x, y), half width (w) and half height (h)
+	/// RADIUS: coordinates of the center (x, y), half width (w) and half height (h)
 	RADIUS,
 }
 
 /// options for the interpretation of the parameters given to rect()
 #[derive(PartialEq)]
 pub enum ImageMode {
-	/// CORNER (default): Coordinates of the upper left corner (x, y), width (w) and height (h)
+	/// CORNER (default): coordinates of the upper left corner (x, y), width (w) and height (h)
 	CORNER,
-	/// CORNERS: Coordinates of the upper left corner (x, y) and the lower right corner (w, h)
+	/// CORNERS: coordinates of the upper left corner (x, y) and the lower right corner (w, h)
 	CORNERS,
-	/// CENTER: Coordinates of the center (x, y), width (w) and height (h)
+	/// CENTER: coordinates of the center (x, y), width (w) and height (h)
 	CENTER,
 }
 
