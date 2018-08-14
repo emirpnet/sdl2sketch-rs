@@ -2,6 +2,8 @@
 name = "sdl2sketch"
 version = "0.1.0"
 authors = ["Jochen Peters <dev@emirp.net>"]
+description = "SDL2Sketch tries to simplify the use of rust-sdl2 inspired by the API of p5.js"
+license = "MIT"
 
 [dependencies]
 rand = "0.3.14"
