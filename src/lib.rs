@@ -482,11 +482,19 @@ impl Sketch {
 
 	/* draw images */
 	
-	/// displays an image at the given position (x,y) and size (w,h)
+	/// displays an image at position (x,y) in size (w,h)
 	///
 	/// If w and/or h is 0 the original image width and/or height is used.
 	pub fn image(&mut self, img: &Image, x: i32, y: i32, w: u32, h: u32) {
-		let (x, y, w, h) = self.image_args(img, x, y, w, h);
+		self.image_part(img, 0, 0, img.width(), img.height(), x, y, w, h);
+	}
+
+	/// displays part of an image defined by (sx, sy, sw, sh) at position (x,y) in size (w,h)
+	///
+	/// If w and/or h is 0 the original image size is used, i.e. no scaling is applied.
+	/// The parameters sx, sy, sw and sh do *not* respect the setting of image_mode!
+	pub fn image_part(&mut self, img: &Image, sx: i32, sy: i32, sw: u32, sh: u32, x: i32, y: i32, w: u32, h: u32) {
+		let (x, y, w, h) = self.image_args(sx, sy, sw, sh, x, y, w, h);
 
 		// convert Surface to Texture
 		// TODO: check if this is a performance issue
@@ -497,23 +505,24 @@ impl Sketch {
 		};
 
 		// draw on canvas
-		let rect = sdl2::rect::Rect::new(x, y, w, h);
-		self.canvas.copy(&tex, None, rect).unwrap_or_else( |e| { eprintln!("Drawing of image failed. {}", e); } );
+		let src_rect = Some(sdl2::rect::Rect::new(sx, sy, sw, sh));
+		let dst_rect = sdl2::rect::Rect::new(x, y, w, h);
+		self.canvas.copy(&tex, src_rect, dst_rect).unwrap_or_else( |e| { eprintln!("Drawing of image failed. {}", e); } );
 	}
 
-	/// converts parameters for rect() accroding to setting of rect_mode
-	fn image_args(&mut self, img: &Image, x: i32, y: i32, width: u32, height: u32) -> (i32, i32, u32, u32) {
+	/// converts parameters for image_part() accroding to setting of image_mode
+	fn image_args(&mut self, _sx: i32, _sy: i32, sw: u32, sh: u32, x: i32, y: i32, width: u32, height: u32) -> (i32, i32, u32, u32) {
 		
 		// handle w and/or h == 0
 		let w;
 		let h;
 		if width == 0 && (self.image_mode == ImageMode::CORNER || self.image_mode == ImageMode::CENTER) {
-			w = img.width();
+			w = sw;
 		} else {
 			w = width;
 		}
 		if height == 0 && (self.image_mode == ImageMode::CORNER || self.image_mode == ImageMode::CENTER) {
-			h = img.height();
+			h = sh;
 		} else {
 			h = height;
 		}
