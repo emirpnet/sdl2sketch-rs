@@ -1,14 +1,14 @@
 extern crate sdl2sketch;
 use sdl2sketch::*;
 
-struct MainState<'a> {
-	img: Image<'a>,
+struct MainState {
+	img: Image,
 	pos: (i32, i32),
 	vel: (i32, i32),
 	size: (i32, i32),
 }
 
-impl<'a> MainLoopMethods for MainState<'a> {
+impl MainLoopMethods for MainState {
 	fn setup(&mut self, s: &mut Sketch) {
 		s.set_framerate(60);
 		//s.no_smooth();
@@ -101,7 +101,7 @@ impl<'a> MainLoopMethods for MainState<'a> {
 fn main() {
 	let mut s = Sketch::new(640, 480, "SDL2Sketch Demo");
 	let mut m = MainState {
-		img: load_image(std::path::Path::new("examples/pixelcar_64x40.png")),
+		img: s.load_image(std::path::Path::new("examples/pixelcar_64x40.png")),
 		pos: (20, 20),
 		vel: (4, 2),
 		size: (64, 40),

@@ -21,7 +21,7 @@ use sdl2::surface::Surface;
 #[doc(no_inline)] pub use sdl2::pixels::Color;
 #[doc(no_inline)] pub use sdl2::keyboard::Keycode;
 #[doc(no_inline)] pub use sdl2::mouse::MouseButton;
-#[doc(no_inline)] pub use sdl2::surface::Surface as Image; // "Surface as Image" is good enough for now.
+#[doc(no_inline)] pub use sdl2::render::Texture as Image;
 
 /// module containing utility functions
 pub mod utils;
@@ -482,11 +482,18 @@ impl Sketch {
 
 	/* draw images */
 	
+	/// loads an image from file (PNG or JPG)
+	pub fn load_image(&mut self, filename: &Path) -> Image {
+		let surf = Surface::from_file(filename).expect("Error loading image. Abort.");
+		self.texture_creator.create_texture_from_surface(surf).expect("Error converting image to texture. Abort.")
+	}
+
 	/// displays an image at position (x,y) in size (w,h)
 	///
 	/// If w and/or h is 0 the original image width and/or height is used.
 	pub fn image(&mut self, img: &Image, x: i32, y: i32, w: u32, h: u32) {
-		self.image_part(img, 0, 0, img.width(), img.height(), x, y, w, h);
+		let query = img.query();
+		self.image_part(img, 0, 0, query.width, query.height, x, y, w, h);
 	}
 
 	/// displays part of an image defined by (sx, sy, sw, sh) at position (x,y) in size (w,h)
@@ -495,19 +502,9 @@ impl Sketch {
 	/// The parameters sx, sy, sw and sh do *not* respect the setting of image_mode!
 	pub fn image_part(&mut self, img: &Image, sx: i32, sy: i32, sw: u32, sh: u32, x: i32, y: i32, w: u32, h: u32) {
 		let (x, y, w, h) = self.image_args(sx, sy, sw, sh, x, y, w, h);
-
-		// convert Surface to Texture
-		// TODO: check if this is a performance issue
-		let tex = self.texture_creator.create_texture_from_surface(img);
-		let tex = match tex {
-			Ok(t) => t,
-			Err(e) => { eprintln!("Drawing of image failed. {}", e); return; }
-		};
-
-		// draw on canvas
 		let src_rect = Some(sdl2::rect::Rect::new(sx, sy, sw, sh));
 		let dst_rect = sdl2::rect::Rect::new(x, y, w, h);
-		self.canvas.copy(&tex, src_rect, dst_rect).unwrap_or_else( |e| { eprintln!("Drawing of image failed. {}", e); } );
+		self.canvas.copy(img, src_rect, dst_rect).unwrap_or_else( |e| { eprintln!("Drawing of image failed. {}", e); } );
 	}
 
 	/// converts parameters for image_part() accroding to setting of image_mode
@@ -578,11 +575,6 @@ pub enum ImageMode {
 	CENTER,
 }
 
-
-/// loads an image from file (PNG or JPG)
-pub fn load_image(filename: &Path) -> Image { // TODO: Why does this not compile as a (not static) method of Sketch?
-	Surface::from_file(filename).expect("Error loading image. Abort.")
-}
 
 /// initializes the necessary SDL2 subsystems and returns a SDL2 window/renderer and event pump
 fn init_sdl_subsystems(width: u32, height: u32, title: &str) -> (Canvas<sdl2::video::Window>, EventPump, Sdl2ImageContext) {
