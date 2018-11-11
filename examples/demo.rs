@@ -11,7 +11,7 @@ struct MainState {
 impl MainLoopMethods for MainState {
 	fn setup(&mut self, s: &mut Sketch) {
 		s.set_framerate(60);
-		//s.no_smooth();
+		s.no_smooth();
 	}
 
 	fn update(&mut self, s: &mut Sketch) {
@@ -31,6 +31,7 @@ impl MainLoopMethods for MainState {
 
 	fn draw(&mut self, s: &mut Sketch) {
 		s.background(Color::RGB(33, 33, 33));
+		s.stroke_weight(5);
 
 		s.stroke(Color::RGB(255, 255, 255));
 		s.line(10, 10, 630, 470);
@@ -57,7 +58,7 @@ impl MainLoopMethods for MainState {
 		s.angle_mode(AngleMode::DEGREES);
 		s.arc(150, 240, 40, 0.0, 270.0);
 
-		s.stroke(Color::RGB(0, 0, 255));
+		s.no_stroke();
 		s.fill(Color::RGB(0, 160, 0));
 		s.angle_mode(AngleMode::RADIANS);
 		s.pie(320, 380, 35, 0.0, 5.0);
@@ -66,7 +67,7 @@ impl MainLoopMethods for MainState {
 		s.fill(Color::RGB(255, 255, 0));
 		s.ellipse(100, 350, 50, 30);
 
-		s.no_stroke();
+		s.stroke(Color::RGB(0, 0, 255));
 		s.fill(Color::RGB(255, 0, 0));
 		s.circle(70, 140, 30);
 

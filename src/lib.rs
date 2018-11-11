@@ -270,7 +270,9 @@ impl Sketch {
 	}
 
 	/// After calling this function the outline of drawn primitives will be in the width of the provided stroke weight in pixels (provided stroke() is set).
-	fn stroke_weight(&mut self, weight: u8) { // TODO: not public, because use of stroke_weight not implemented yet
+	///
+	/// The use of stroke weight is still a *work in progress*, only few draw functions make use of it. (TODO)
+	pub fn stroke_weight(&mut self, weight: u8) {
 		self.stroke_weight = weight;
 	}
 
@@ -346,8 +348,8 @@ impl Sketch {
 			if self.smooth {
 				self.canvas.aa_line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_line() failed. {}", e); } );
 			} else {
-				self.canvas.line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx line() failed. {}", e); } );
-				//self.canvas.thick_line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, self.stroke_weight, c).unwrap_or_else( |e| { eprintln!("SDL-gfx line() failed. {}", e); } );
+				//self.canvas.line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx line() failed. {}", e); } );
+				self.canvas.thick_line(x1 as i16, y1 as i16, x2 as i16, y2 as i16, self.stroke_weight, c).unwrap_or_else( |e| { eprintln!("SDL-gfx line() failed. {}", e); } );
 			}
 		}
 	}
@@ -455,10 +457,13 @@ impl Sketch {
 			}
 		}
 		if let Some(c) = self.stroke_color {
-			if self.smooth {
-				self.canvas.aa_circle(x as i16, y as i16, r as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_circle() failed. {}", e); } );
-			} else {
-				self.canvas.circle(x as i16, y as i16, r as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx circle() failed. {}", e); } );
+			for i in 0..self.stroke_weight { // probably not the way to do it. (TODO)
+				let radius: i16 = r as i16 - i as i16;
+				if self.smooth {
+					self.canvas.aa_circle(x as i16, y as i16, radius as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx aa_circle() failed. {}", e); } );
+				} else {
+					self.canvas.circle(x as i16, y as i16, radius as i16, c).unwrap_or_else( |e| { eprintln!("SDL-gfx circle() failed. {}", e); } );
+				}
 			}
 		}
 	}
@@ -564,7 +569,7 @@ pub enum RectMode {
 	RADIUS,
 }
 
-/// options for the interpretation of the parameters given to rect()
+/// options for the interpretation of the parameters given to image()
 #[derive(PartialEq)]
 pub enum ImageMode {
 	/// CORNER (default): coordinates of the upper left corner (x, y), width (w) and height (h)
