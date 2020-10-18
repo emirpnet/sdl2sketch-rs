@@ -95,7 +95,7 @@ impl Cell {
 	pub fn update(&mut self, universe: &Universe) {
 		let prev_alive = self.alive;
 		self.alive = match (self.alive, self.count_neighbours(universe)) {
-			(true, 2...3) => true,
+			(true, 2..=3) => true,
 			(true, _)     => false,
 			(false, 3)    => true,
 			(false, _)    => false,
@@ -169,4 +169,3 @@ impl Cell {
 		indices
 	}
 }
-
