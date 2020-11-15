@@ -1,4 +1,4 @@
-//! SDL2Sketch tries to simplify the use of [rust-sdl2](https://github.com/Rust-SDL2/rust-sdl2) by following the style of the [p5.js](https://p5js.org) API. It does not try to be a complete game engine, but just wants to make it as easy as possible to create visual applications in Rust without much boilerplate code. Code examples and the source code of SDL2Sketch can be found on its [GitHub page](https://github.com/emirpnet/sdl2sketch).
+//! SDL2Sketch for Rust tries to simplify the use of [rust-sdl2](https://github.com/Rust-SDL2/rust-sdl2) by following the style of the [p5.js](https://p5js.org) API. It does not try to be a complete game engine, but just wants to make it as easy as possible to create visual applications in Rust without much boilerplate code. Code examples and the source code of SDL2Sketch can be found on its [GitHub page](https://github.com/emirpnet/sdl2sketch-rs).
 
 extern crate num_traits;
 extern crate sdl2;
@@ -86,8 +86,8 @@ pub trait MainLoopMethods {
 
 	/// called every frame inside the main loop
 	fn draw(&mut self, _s: &mut Sketch) {}
-	
-	/// called inside the main loop on a KeyDown event 
+
+	/// called inside the main loop on a KeyDown event
 	///
 	/// The default implementation quits the main loop when Escape is pressed.
 	fn key_pressed(&mut self, s: &mut Sketch, code: Keycode) {
@@ -97,7 +97,7 @@ pub trait MainLoopMethods {
 		}
 	}
 
-	/// called inside the main loop on a KeyUp event 
+	/// called inside the main loop on a KeyUp event
 	fn key_released(&mut self, _s: &mut Sketch, _key: Keycode) {}
 
 	/// called inside the main loop on a MouseMotion event, if no MouseButton is pressed
@@ -140,7 +140,7 @@ pub struct Sketch {
 
 
 impl Sketch {
-	
+
 	/* general methods */
 
 	/// create a new sketch
@@ -178,7 +178,7 @@ impl Sketch {
 	pub fn height(&self) -> i32 {
 		self.height as i32
 	}
-	
+
 	/// returns the current framerate in frames per second
 	///
 	/// In the p5.js API there is one function as getter and setter, framerate(), which has an optional argument.
@@ -188,7 +188,7 @@ impl Sketch {
 
 	/// sets the max. framerate in frames per second
 	///
-	/// max. setting 200 fps; 
+	/// max. setting 200 fps;
 	/// In the p5.js API there is one function as getter and setter, framerate(), which has an optional argument.
 	pub fn set_framerate(&mut self, fps: u32) {
 		self.fps_manager.set_framerate(fps).unwrap_or_else( |e| { eprintln!("SDL2-gfx set_framerate() failed. {}", e); } );
@@ -481,7 +481,7 @@ impl Sketch {
 	}
 
 	/* draw images */
-	
+
 	/// loads an image from file (PNG or JPG)
 	pub fn load_image(&mut self, filename: &Path) -> Image {
 		let surf = Surface::from_file(filename).expect("Error loading image. Abort.");
@@ -509,7 +509,7 @@ impl Sketch {
 
 	/// converts parameters for image_part() accroding to setting of image_mode
 	fn image_args(&mut self, _sx: i32, _sy: i32, sw: u32, sh: u32, x: i32, y: i32, width: u32, height: u32) -> (i32, i32, u32, u32) {
-		
+
 		// handle w and/or h == 0
 		let w;
 		let h;
@@ -523,7 +523,7 @@ impl Sketch {
 		} else {
 			h = height;
 		}
-		
+
 		// handle image mode
 		match self.image_mode {
 			ImageMode::CORNER  => (x, y, w, h),
@@ -628,4 +628,3 @@ impl FPSData {
 		}
 	}
 }
-
